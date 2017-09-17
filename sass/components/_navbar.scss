@@ -120,6 +120,9 @@ nav {
         background-color: rgba(0,0,0,.1);
       }
     }
+    span {
+      padding: 0 15px;
+    }
     a {
       transition: background-color .3s;
       font-size: $navbar-font-size;

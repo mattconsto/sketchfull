@@ -3,6 +3,16 @@ const Sketchfull = {
 
 	Init() {
 		$(".dropdown-button").dropdown();
+		$(".resizable").resizable();
+		$(".draggable").draggable({handle: ".draggable-handle"});
+		$(".colpick").colpick({
+			color: "123456",
+			flat: true,
+			onChange:function(hsb,hex,rgb,el,bySetColor) {
+				Sketchfull.canvas.context.beginPath();
+				Sketchfull.canvas.context.strokeStyle = "#" + hex;
+			}
+		});
 
 		Sketchfull.canvas = $("#sketch-canvas")[0];
 		Sketchfull.canvas.width = Sketchfull.canvas.clientWidth;
@@ -15,11 +25,6 @@ const Sketchfull = {
 		Sketchfull.canvas.context.lineCap = "round";
 
 		$(window).resize(Sketchfull.Clear);
-
-		$("#sketch-color").on("change", e => {
-			Sketchfull.canvas.context.beginPath();
-			Sketchfull.canvas.context.strokeStyle = e.target.value;
-		});
 
 		$("#sketch-thickness").on("change", e => {
 			Sketchfull.canvas.context.beginPath();
