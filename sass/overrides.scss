@@ -23,7 +23,6 @@ body {
 
 nav {
 	flex: none;
-	z-index: 100;
 }
 
 #sketch-container {
@@ -68,7 +67,7 @@ nav {
 		display: inline-block !important;
 		margin: 0;
 		overflow: hidden;
-		z-index: 50;
+		z-index: 25;
 	}
 
 	#sketch-tool-panel {
@@ -92,4 +91,8 @@ nav {
 			background: none;
 		}
 	}
+}
+
+.dropdown-content {
+	z-index: 50;
 }

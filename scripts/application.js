@@ -69,17 +69,17 @@ const Sketchfull = {
 			var xx = x0-x1, yy = y0-y1, xy;			/* relative values for checks */
 			var dx, dy, err, ed, cur = xx*sy-yy*sx;					 /* curvature */
 
-			//assert(xx*sx >= 0 && yy*sy >= 0);  /* sign of gradient must not change */
+			//assert(xx*sx >= 0 && yy*sy >= 0);	/* sign of gradient must not change */
 
 			if (sx*sx+sy*sy > xx*xx+yy*yy) { /* begin with longer part */ 
 				x2 = x0; x0 = sx+x1; y2 = y0; y0 = sy+y1; cur = -cur; /* swap P0 P2 */
 			}
 			console.log(xx, sy, yy, sx, xx*sy-yy*sx);
-			if (cur != 0) {																  /* no straight line */
+			if (cur != 0) {																	/* no straight line */
 				xx += sx; xx *= sx = x0 < x2 ? 1 : -1;			 /* x step direction */
 				yy += sy; yy *= sy = y0 < y2 ? 1 : -1;			 /* y step direction */
 				xy = 2*xx*yy; xx *= xx; yy *= yy;			/* differences 2nd degree */
-				if (cur*sx*sy < 0) {								  /* negated curvature? */
+				if (cur*sx*sy < 0) {									/* negated curvature? */
 					xx = -xx; yy = -yy; xy = -xy; cur = -cur;
 				}
 				dx = 4.0*sy*(x1-x0)*cur+xx-xy;				/* differences 1st degree */
@@ -87,7 +87,7 @@ const Sketchfull = {
 				xx += xx; yy += yy; err = dx+dy+xy;					/* error 1st step */
 				do {
 					cur = Math.min(dx+xy,-xy-dy);
-					ed = Math.max(dx+xy,-xy-dy);			  /* approximate error distance */
+					ed = Math.max(dx+xy,-xy-dy);				/* approximate error distance */
 					ed = 255/(ed+2*ed*cur*cur/(4.*ed*ed+cur*cur)); 
 					this.pixel(layer, x0,y0, ed*Math.abs(err-dx-dy-xy));			 /* plot curve */
 					if (x0 == x2 && y0 == y2) return;/* last pixel -> curve finished */
@@ -100,9 +100,9 @@ const Sketchfull = {
 						if (cur < ed) this.pixel(layer, x1+sx,y0, ed*Math.abs(cur));
 						y0 += sy; dy -= xy; err += dx += xx; 
 					}
-				} while (dy < dx);				  /* gradient negates -> close curves */
+				} while (dy < dx);					/* gradient negates -> close curves */
 			}
-			this.lineaa(layer, x0,y0, x2,y2);				  /* plot remaining needle to end */
+			this.lineaa(layer, x0,y0, x2,y2);					/* plot remaining needle to end */
 		},
 		circle(layer, x, y, r) {
 			for(var i = -r-1; i < r+1; i++) {
@@ -149,20 +149,12 @@ const Sketchfull = {
 		Sketchfull.canvas.height = 800;
 		Sketchfull.canvas.isMouseDown = false;
 		Sketchfull.canvas.context = Sketchfull.canvas.getContext("2d");
-		// Sketchfull.canvas.context.imageSmoothingEnabled = true;
-		// Sketchfull.canvas.context.strokeStyle = "#000000";
-		// Sketchfull.canvas.context.lineWidth = 5;
-		// Sketchfull.canvas.context.lineCap = "round";
 
 		$("#sketch-thickness").on("change", e => {
-			// Sketchfull.canvas.context.beginPath();
-			// Sketchfull.canvas.context.lineWidth = e.target.value;
 			Sketchfull.options.width = e.target.value
 		});
 
 		Sketchfull.canvas.addEventListener("mousedown", e => {
-			// Sketchfull.canvas.context.beginPath();
-			// Sketchfull.canvas.context.moveTo(e.offsetX, e.offsetY);
 			Sketchfull.canvas.isMouseDown = true;
 		});
 
@@ -174,12 +166,7 @@ const Sketchfull = {
 
 		Sketchfull.canvas.addEventListener("mousemove", e => {
 			if(Sketchfull.canvas.isMouseDown) {
-				var xc = (e.offsetX - e.movementX + e.offsetX) / 2;
-				var yc = (e.offsetY - e.movementY + e.offsetY) / 2;
-				// Sketchfull.canvas.context.quadraticCurveTo(e.offsetX - e.movementX, e.offsetY - e.movementY, xc, yc);
-				// Sketchfull.canvas.context.stroke(); // Remove for anti aliasing
 				Sketchfull.tools.linepixel(Sketchfull.layers[0], e.offsetX - e.movementX, e.offsetY - e.movementY, e.offsetX, e.offsetY);
-				// Sketchfull.tools.curve(Sketchfull.layers[0], e.offsetX - e.movementX, e.offsetY - e.movementY, e.offsetX, e.offsetY, xc, yc);
 			}
 		});
 
@@ -191,8 +178,6 @@ const Sketchfull = {
 		});
 
 		Sketchfull.canvas.addEventListener("mouseup", e => {
-			// Sketchfull.canvas.context.quadraticCurveTo(e.offsetX - e.movementX, e.offsetY - e.movementY, e.offsetX, e.offsetY);
-			// Sketchfull.canvas.context.stroke();
 			Sketchfull.canvas.isMouseDown = false;
 		});
 
@@ -205,6 +190,32 @@ const Sketchfull = {
 		window.requestAnimationFrame(Sketchfull.Update);
 	},
 
+	Open(e) {
+		var reader = new FileReader();
+		reader.onload = function(event) {
+			var image = new Image();
+			image.onload = function() {
+				console.dir(image);
+				var canvas = document.createElement('canvas');
+				context = canvas.getContext("2d");
+				Sketchfull.canvas.width = canvas.width = image.width;
+				Sketchfull.canvas.height = canvas.height = image.height;
+				context.drawImage(image, 0, 0);
+				Sketchfull.layers[0] = context.getImageData(0, 0, image.width, image.height);
+			}
+			image.src = event.target.result;
+		}
+		reader.readAsDataURL(e.target.files[0]);	 
+	},
+
+	Invert() {
+		for(var i = 0; i < Sketchfull.layers[0].data.length; i += 4) {
+			Sketchfull.layers[0].data[i + 0] = 255 - Sketchfull.layers[0].data[i + 0];
+			Sketchfull.layers[0].data[i + 1] = 255 - Sketchfull.layers[0].data[i + 1];
+			Sketchfull.layers[0].data[i + 2] = 255 - Sketchfull.layers[0].data[i + 2];
+		}
+	},
+
 	Clear() {
 		Sketchfull.layers = [new ImageData(500, 500)];
 	},
@@ -212,6 +223,11 @@ const Sketchfull = {
 	Download(source) {
 		source.download = "image.png";
 		source.href = Sketchfull.canvas.toDataURL("image/png").replace(/^data:image\/[^;]/, 'data:application/octet-stream');
+	},
+
+	Print() {
+		var printwindow = window.open(Sketchfull.canvas.toDataURL("image/png"), "_blank");
+		printwindow.onload = () => window.print();
 	}
 };
 

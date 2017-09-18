@@ -10,21 +10,61 @@
 	<link rel="stylesheet" href="stylesheets/overrides.css" />
 </head>
 <body>
-	<!-- Dropdown Structure -->
-	<ul id="dropdown1" class="dropdown-content">
-		<li><a href="#!">one</a></li>
-		<li><a href="#!">two</a></li>
+	<ul id="dropdown-file" class="dropdown-content">
+		<li><div class="file-field input-field">
+			<div>
+				<span><a class="teal-text lighten-1">Open</a></span>
+				<input type="file" onchange="Sketchfull.Open(event)" />
+			</div>
+		</div></li>
+		<li><a onclick="Sketchfull.Download(this)">Download</a></li>
+		<li><a onclick="Sketchfull.Print()">Print</a></li>
 		<li class="divider"></li>
-		<li><a href="#!">three</a></li>
+		<li><a href="#!">Resize Image</a></li>
+		<li><a href="#!">Resize Canvas</a></li>
+	</ul>
+
+	<ul id="dropdown-edit" class="dropdown-content">
+		<li><a href="#!">Undo</a></li>
+		<li><a href="#!">Redo</a></li>
+		<li class="divider"></li>
+		<li><a href="#!">Cut</a></li>
+		<li><a href="#!">Copy</a></li>
+		<li><a href="#!">Paste</a></li>
+		<li class="divider"></li>
+		<li><a href="#!">Clear Selection</a></li>
+		<li><a href="#!">Select All</a></li>
+	</ul>
+
+	<ul id="dropdown-view" class="dropdown-content">
+		<li><a href="#!">Tools</a></li>
+		<li><a href="#!">Color Picker</a></li>
+		<li><a href="#!">Layers</a></li>
+		<li class="divider"></li>
+		<li><a href="#!">Reset Zoom</a></li>
+	</ul>
+
+	<ul id="dropdown-effects" class="dropdown-content">
+		<li><a href="#!">Flip/Rotate</a></li>
+		<li><a href="#!">Stretch/Skew</a></li>
+		<li><a onclick="Sketchfull.Invert()">Invert Colors</a></li>
+		<li><a onclick="Sketchfull.Clear()">Clear Canvas</a></li>
+	</ul>
+
+	<ul id="dropdown-help" class="dropdown-content">
+		<li><a href="#!">User Guide</a></li>
+		<li><a href="#!">About</a></li>
 	</ul>
 
 	<nav>
 		<div class="nav-wrapper">
-			<a href="#!" class="brand-logo"><i class="material-icons">palette</i>Sketchfull</a>
+			<a href="#!" class="brand-logo left"><i class="material-icons">palette</i>Sketchfull</a>
 			<ul class="right">
-				<li><a onclick="Sketchfull.Clear()">Clear</a></li>
-				<li><a onclick="Sketchfull.Download(this)">Download</a></li>
-				<li><a class="dropdown-button" href="#!" data-activates="dropdown1">Dropdown<i class="material-icons right">arrow_drop_down</i></a></li>
+				<li><a class="dropdown-button" href="#!" data-activates="dropdown-file">File<i class="material-icons right">arrow_drop_down</i></a></li>
+				<li><a class="dropdown-button" href="#!" data-activates="dropdown-edit">Edit<i class="material-icons right">arrow_drop_down</i></a></li>
+				<li><a class="dropdown-button" href="#!" data-activates="dropdown-view">View<i class="material-icons right">arrow_drop_down</i></a></li>
+				<li><a class="dropdown-button" href="#!" data-activates="dropdown-effects">Effects<i class="material-icons right">arrow_drop_down</i></a></li>
+				<li><a class="dropdown-button" href="#!" data-activates="dropdown-help">Help<i class="material-icons right">arrow_drop_down</i></a></li>
 			</ul>
 		</div>
 	</nav>
@@ -38,29 +78,28 @@
 		</div>
 	</nav>
 
-
 	<div id="sketch-panels">
 		<div id="sketch-tool-panel" class="card sketch-panel resizable draggable">
 			<div class="card-content sketch-panel-title draggable-handle"></div>
 			<div class="card-content">
-				<i class="material-icons">clear</i>
-				<i class="material-icons">clear</i>
-				<i class="material-icons">clear</i>
-				<i class="material-icons">clear</i>
-				<i class="material-icons">clear</i>
-				<i class="material-icons">clear</i>
-				<i class="material-icons">clear</i>
-				<i class="material-icons">clear</i>
-				<i class="material-icons">clear</i>
-				<i class="material-icons">clear</i>
-				<i class="material-icons">clear</i>
-				<i class="material-icons">clear</i>
-				<i class="material-icons">clear</i>
-				<i class="material-icons">clear</i>
-				<i class="material-icons">clear</i>
-				<i class="material-icons">clear</i>
-				<i class="material-icons">clear</i>
-				<i class="material-icons">clear</i>
+				<a class="waves-effect"><i class="material-icons" title="Undo">undo</i></a>
+				<a class="waves-effect"><i class="material-icons" title="Redo">redo</i></a>
+				<a class="waves-effect"><i class="material-icons">&nbsp;</i></a>
+				<a class="waves-effect"><i class="material-icons" title="Select">select_all</i></a>
+				<a class="waves-effect"><i class="material-icons" title="Picker">colorize</i></a>
+				<a class="waves-effect"><i class="material-icons" title="Erase">crop_7_5</i></a>
+				<a class="waves-effect"><i class="material-icons" title="Pencil">create</i></a>
+				<a class="waves-effect"><i class="material-icons" title="Brush">brush</i></a>
+				<a class="waves-effect"><i class="material-icons" title="Fill">format_color_fill</i></a>
+				<a class="waves-effect"><i class="material-icons" title="Spray">highlight</i></a>
+				<a class="waves-effect"><i class="material-icons">&nbsp;</i></a>
+				<a class="waves-effect"><i class="material-icons" title="Text">text_fields</i></a>
+				<a class="waves-effect"><i class="material-icons" title="Line">remove</i></a>
+				<a class="waves-effect"><i class="material-icons" title="Rectangle">add_box</i></a>
+				<a class="waves-effect"><i class="material-icons" title="Circle">add_circle</i></a>
+				<a class="waves-effect"><i class="material-icons">&nbsp;</i></a>
+				<a class="waves-effect"><i class="material-icons" title="Zoom-in">zoom_in</i></a>
+				<a class="waves-effect"><i class="material-icons" title="Zoom-out">zoom_out</i></a>
 			</div>
 		</div>
 
