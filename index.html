@@ -70,7 +70,7 @@
 	</nav>
 
 	<nav class="red lighten-2">
-		<div class="nav-wrapper">
+		<div id="sketch-toolbar" class="nav-wrapper">
 			<ul>
 				<li><span>Line Thickness</span></li>
 				<li><span class="range-field"><input type="range" id="sketch-thickness" min="1" max="250" value="5" /></span></li>
@@ -78,35 +78,41 @@
 		</div>
 	</nav>
 
-	<div id="sketch-panels">
-		<div id="sketch-tool-panel" class="card sketch-panel resizable draggable">
-			<div class="card-content sketch-panel-title draggable-handle"></div>
-			<div class="card-content">
-				<a class="waves-effect"><i class="material-icons" title="Undo">undo</i></a>
-				<a class="waves-effect"><i class="material-icons" title="Redo">redo</i></a>
-				<a class="waves-effect"><i class="material-icons">&nbsp;</i></a>
-				<a class="waves-effect"><i class="material-icons" title="Select">select_all</i></a>
-				<a class="waves-effect"><i class="material-icons" title="Picker">colorize</i></a>
-				<a class="waves-effect"><i class="material-icons" title="Erase">crop_7_5</i></a>
-				<a class="waves-effect"><i class="material-icons" title="Pencil">create</i></a>
-				<a class="waves-effect"><i class="material-icons" title="Brush">brush</i></a>
-				<a class="waves-effect"><i class="material-icons" title="Fill">format_color_fill</i></a>
-				<a class="waves-effect"><i class="material-icons" title="Spray">highlight</i></a>
-				<a class="waves-effect"><i class="material-icons">&nbsp;</i></a>
-				<a class="waves-effect"><i class="material-icons" title="Text">text_fields</i></a>
-				<a class="waves-effect"><i class="material-icons" title="Line">remove</i></a>
-				<a class="waves-effect"><i class="material-icons" title="Rectangle">add_box</i></a>
-				<a class="waves-effect"><i class="material-icons" title="Circle">add_circle</i></a>
-				<a class="waves-effect"><i class="material-icons">&nbsp;</i></a>
-				<a class="waves-effect"><i class="material-icons" title="Zoom-in">zoom_in</i></a>
-				<a class="waves-effect"><i class="material-icons" title="Zoom-out">zoom_out</i></a>
-			</div>
+	<div id="sketch-tool-panel" class="card sketch-panel resizable draggable">
+		<div class="card-content sketch-panel-title draggable-handle"></div>
+		<div id="sketch-tools" class="card-content">
+			<a data-tool="undo" class="waves-effect"><i class="material-icons" title="Undo">undo</i></a>
+			<a data-tool="redo" class="waves-effect"><i class="material-icons" title="Redo">redo</i></a>
+			<a class="waves-effect"><i class="material-icons">&nbsp;</i></a>
+			<a data-tool="select" class="waves-effect"><i class="material-icons" title="Select">select_all</i></a>
+			<a data-tool="pick" class="waves-effect"><i class="material-icons" title="Picker">colorize</i></a>
+			<a data-tool="erase" class="waves-effect"><i class="material-icons" title="Erase">crop_7_5</i></a>
+			<a data-tool="pencil" class="waves-effect"><i class="material-icons" title="Pencil">create</i></a>
+			<a data-tool="brush" class="waves-effect"><i class="material-icons" title="Brush">brush</i></a>
+			<a data-tool="fill" class="waves-effect"><i class="material-icons" title="Fill">format_color_fill</i></a>
+			<a data-tool="gradient" class="waves-effect"><i class="material-icons" title="Gradient">gradient</i></a>
+			<a data-tool="spray" class="waves-effect"><i class="material-icons" title="Spray">highlight</i></a>
+			<a class="waves-effect"><i class="material-icons">&nbsp;</i></a>
+			<a data-tool="text" class="waves-effect"><i class="material-icons" title="Text">text_fields</i></a>
+			<a data-tool="line" class="waves-effect"><i class="material-icons" title="Line">remove</i></a>
+			<a data-tool="rectangle" class="waves-effect"><i class="material-icons" title="Rectangle">add_box</i></a>
+			<a data-tool="circle" class="waves-effect"><i class="material-icons" title="Circle">add_circle</i></a>
+			<a class="waves-effect"><i class="material-icons">&nbsp;</i></a>
+			<a data-tool="zoomin" class="waves-effect"><i class="material-icons" title="Zoom-in">zoom_in</i></a>
+			<a data-tool="zoomout" class="waves-effect"><i class="material-icons" title="Zoom-out">zoom_out</i></a>
 		</div>
+	</div>
 
-		<div id="sketch-color-panel" class="card sketch-panel draggable">
-			<div class="card-content sketch-panel-title draggable-handle"></div>
-			<div class="card-content colpick">
-			</div>
+	<div id="sketch-color-panel" class="card sketch-panel draggable">
+		<div class="card-content sketch-panel-title draggable-handle"></div>
+		<div class="card-content colpick">
+		</div>
+	</div>
+
+	<div id="sketch-layer-panel" class="card sketch-panel resizable draggable">
+		<div class="card-content sketch-panel-title draggable-handle"></div>
+		<div class="card-content">
+			Layers
 		</div>
 	</div>
 

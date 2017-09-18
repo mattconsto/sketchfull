@@ -6,6 +6,192 @@ const Sketchfull = {
 		new ImageData(800, 800)
 	],
 	tools: {
+		undo: {
+
+		},
+		redo: {
+
+		},
+		select: {
+			options: {
+			},
+			toolbar: '<ul><li><span>Select</span></li></ul>',
+			Start(x, y) {
+				console.log(x, y);
+			},
+			Move(x, y, dx, dy) {
+			},
+			End(x, y) {
+			}
+		},
+		pick: {
+			options: {
+				alllayers: false
+			},
+			toolbar: '<ul><li><span>Color Picker</span></li><li><input type="checkbox" id="sketch-tool-pick-alllayers" checked="unchecked" /><label for="sketch-tool-pick-alllayers">Sample all layers</label></li></ul>',
+			Start(x, y) {
+				console.log(x, y);
+			},
+			Move(x, y, dx, dy) {
+			},
+			End(x, y) {
+			}
+		},
+		erase: {
+			options: {
+			},
+			toolbar: '<ul><li><span>Erase</span></li></ul>',
+			Start(x, y) {
+				console.log(x, y);
+			},
+			Move(x, y, dx, dy) {
+			},
+			End(x, y) {
+			}
+		},
+		pencil: {
+			options: {
+			},
+			toolbar: '<ul><li><span>Pencil</span></li><li><span>Line Thickness</span></li><li><span class="range-field"><input type="range" id="sketch-thickness" min="1" max="250" value="5" /></span></li></ul>',
+			Start(x, y) {
+			},
+			Move(x, y, dx, dy) {
+				x0 = Math.round(x0);
+				y0 = Math.round(y0);
+				x1 = Math.round(x1);
+				y1 = Math.round(y1);
+
+				var dx = Math.abs(x1 - x0);
+				var dy = Math.abs(y1 - y0);
+				var sx = (x0 < x1) ? 1 : -1;
+				var sy = (y0 < y1) ? 1 : -1;
+				var err = dx - dy;
+
+				var r = Math.round(Sketchfull.options.width/2);
+
+				this.fillcircle(layer, x0, y0, r);
+
+				while(true) {
+
+					for (var x = -r-1; x < r+1; x++)
+						this.pixel(layer, x0 + x, y0, Math.clamp(r + 0.5 - Math.abs(x), 0, 1) * 255);
+					for (var y = -r-1; y < r+1; y++)
+						this.pixel(layer, x0, y0 + y, Math.clamp(r + 0.5 - Math.abs(y), 0, 1) * 255);
+
+					if((x0 == x1) && (y0 == y1)) break;
+					var e2 = 2 * err;
+					if(e2 > -dy) {err -= dy; x0 += sx;}
+					if(e2 <	dx) {err += dx; y0 += sy;}
+				}
+
+				this.fillcircle(layer, x0, y0, r);
+			},
+			End(x, y) {
+			}
+		},
+		brush: {
+			options: {
+			},
+			toolbar: '<ul><li><span>Brush</span></li></ul>',
+			Start(x, y) {
+				console.log(x, y);
+			},
+			Move(x, y, dx, dy) {
+			},
+			End(x, y) {
+			}
+		},
+		fill: {
+			options: {
+			},
+			toolbar: '<ul><li><span>Fill</span></li></ul>',
+			Start(x, y) {
+				console.log(x, y);
+			},
+			Move(x, y, dx, dy) {
+			},
+			End(x, y) {
+			}
+		},
+		gradient: {
+			options: {
+			},
+			toolbar: '<ul><li><span>Gradient</span></li></ul>',
+			Start(x, y) {
+				console.log(x, y);
+			},
+			Move(x, y, dx, dy) {
+			},
+			End(x, y) {
+			}
+		},
+		spray: {
+			options: {
+			},
+			toolbar: '<ul><li><span>Spray</span></li></ul>',
+			Start(x, y) {
+				console.log(x, y);
+			},
+			Move(x, y, dx, dy) {
+			},
+			End(x, y) {
+			}
+		},
+		text: {
+			options: {
+			},
+			toolbar: '<ul><li><span>Text</span></li></ul>',
+			Start(x, y) {
+				console.log(x, y);
+			},
+			Move(x, y, dx, dy) {
+			},
+			End(x, y) {
+			}
+		},
+		line: {
+			options: {
+			},
+			toolbar: '<ul><li><span>Line</span></li></ul>',
+			Start(x, y) {
+				console.log(x, y);
+			},
+			Move(x, y, dx, dy) {
+			},
+			End(x, y) {
+			}
+		},
+		rectangle: {
+			options: {
+			},
+			toolbar: '<ul><li><span>Rectangle</span></li></ul>',
+			Start(x, y) {
+				console.log(x, y);
+			},
+			Move(x, y, dx, dy) {
+			},
+			End(x, y) {
+			}
+		},
+		circle: {
+			options: {
+			},
+			toolbar: '<ul><li><span>Circle</span></li></ul>',
+			Start(x, y) {
+				console.log(x, y);
+			},
+			Move(x, y, dx, dy) {
+			},
+			End(x, y) {
+			}
+		},
+		zoomin: {
+
+		},
+		zoomout: {
+
+		},
+
 		linepixel(layer, x0, y0, x1, y1) {
 			x0 = Math.round(x0);
 			y0 = Math.round(y0);
@@ -20,7 +206,7 @@ const Sketchfull = {
 
 			var r = Math.round(Sketchfull.options.width/2);
 
-			this.circle(layer, x0, y0, r);
+			this.fillcircle(layer, x0, y0, r);
 
 			while(true) {
 
@@ -35,7 +221,7 @@ const Sketchfull = {
 				if(e2 <	dx) {err += dx; y0 += sy;}
 			}
 
-			this.circle(layer, x0, y0, r);
+			this.fillcircle(layer, x0, y0, r);
 		},
 		lineaa(layer, x0, y0, x1, y1) {
 			var wd = Sketchfull.options.width-1;
@@ -105,7 +291,7 @@ const Sketchfull = {
 			}
 			this.lineaa(layer, x0,y0, x2,y2);					/* plot remaining needle to end */
 		},
-		circle(layer, x, y, r) {
+		fillcircle(layer, x, y, r) {
 			r = Math.round(r);
 
 			for(var i = -r-1; i < r+1; i++) {
@@ -130,6 +316,7 @@ const Sketchfull = {
 	touches:{},
 	transform: {x: 0, y: 50},
 	zoom: 1,
+	tool: "pencil",
 
 	Update(timestamp) {
 		Sketchfull.canvas.context.clearRect(0, 0, Sketchfull.canvas.width, Sketchfull.canvas.height);
@@ -154,6 +341,13 @@ const Sketchfull = {
 		Sketchfull.canvas.height = 800;
 		Sketchfull.canvas.isMouseDown = false;
 		Sketchfull.canvas.context = Sketchfull.canvas.getContext("2d");
+
+		$("#sketch-tools a").on("click", e => {
+			if("tool" in e.currentTarget.dataset && e.currentTarget.dataset.tool in Sketchfull.tools) {
+				Sketchfull.tool = e.currentTarget.dataset.tool;
+				$("#sketch-toolbar").html(Sketchfull.tools[Sketchfull.tool].toolbar);
+			}
+		});
 
 		$("#sketch-thickness").on("change", e => {
 			Sketchfull.options.width = e.target.value
