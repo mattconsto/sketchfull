@@ -7,14 +7,18 @@ const Sketchfull = {
 	],
 	tools: {
 		linepixel(layer, x0, y0, x1, y1) {
-			console.log(layer, x0, y0, x1, y1);
+			x0 = Math.round(x0);
+			y0 = Math.round(y0);
+			x1 = Math.round(x1);
+			y1 = Math.round(y1);
+
 			var dx = Math.abs(x1 - x0);
 			var dy = Math.abs(y1 - y0);
 			var sx = (x0 < x1) ? 1 : -1;
 			var sy = (y0 < y1) ? 1 : -1;
 			var err = dx - dy;
 
-			var r = Sketchfull.options.width/2;
+			var r = Math.round(Sketchfull.options.width/2);
 
 			this.circle(layer, x0, y0, r);
 
@@ -34,7 +38,6 @@ const Sketchfull = {
 			this.circle(layer, x0, y0, r);
 		},
 		lineaa(layer, x0, y0, x1, y1) {
-			console.log("Line", x0, y0, x1, y1);
 			var wd = Sketchfull.options.width-1;
 			var dx = Math.abs(x1-x0), sx = x0 < x1 ? 1 : -1; 
 			var dy = Math.abs(y1-y0), sy = y0 < y1 ? 1 : -1; 
@@ -64,7 +67,6 @@ const Sketchfull = {
 			this.circle(layer, x0, y0, Sketchfull.options.width/2);
 		},
 		curve(layer, x0, y0, x1, y1, x2, y2) {
-			console.log("Curve", x0, y0, x1, y1, x2, y2);
 			var sx = x2-x1, sy = y2-y1;
 			var xx = x0-x1, yy = y0-y1, xy;			/* relative values for checks */
 			var dx, dy, err, ed, cur = xx*sy-yy*sx;					 /* curvature */
@@ -74,7 +76,6 @@ const Sketchfull = {
 			if (sx*sx+sy*sy > xx*xx+yy*yy) { /* begin with longer part */ 
 				x2 = x0; x0 = sx+x1; y2 = y0; y0 = sy+y1; cur = -cur; /* swap P0 P2 */
 			}
-			console.log(xx, sy, yy, sx, xx*sy-yy*sx);
 			if (cur != 0) {																	/* no straight line */
 				xx += sx; xx *= sx = x0 < x2 ? 1 : -1;			 /* x step direction */
 				yy += sy; yy *= sy = y0 < y2 ? 1 : -1;			 /* y step direction */
@@ -105,6 +106,8 @@ const Sketchfull = {
 			this.lineaa(layer, x0,y0, x2,y2);					/* plot remaining needle to end */
 		},
 		circle(layer, x, y, r) {
+			r = Math.round(r);
+
 			for(var i = -r-1; i < r+1; i++) {
 				var height = Math.sqrt(r * r - i * i);
 
@@ -114,10 +117,10 @@ const Sketchfull = {
 		},
 		pixel(layer, x, y, alpha) {
 			// console.log(layer, x, y, alpha);
-			layer.data[y * (layer.width * 4) + x * 4 + 0] = Sketchfull.options.color.r;
-			layer.data[y * (layer.width * 4) + x * 4 + 1] = Sketchfull.options.color.g;
-			layer.data[y * (layer.width * 4) + x * 4 + 2] = Sketchfull.options.color.b;
-			layer.data[y * (layer.width * 4) + x * 4 + 3] = Math.max(layer.data[y * (layer.width * 4) + x * 4 + 3], alpha);
+			layer.data[y * (layer.width * 4) + x * 4 + 0] = (Sketchfull.options.color.r) & 0xff;
+			layer.data[y * (layer.width * 4) + x * 4 + 1] = (Sketchfull.options.color.g) & 0xff;
+			layer.data[y * (layer.width * 4) + x * 4 + 2] = (Sketchfull.options.color.b) & 0xff;
+			layer.data[y * (layer.width * 4) + x * 4 + 3] = Math.max(layer.data[y * (layer.width * 4) + x * 4 + 3], alpha & 0xff);
 		}
 	},
 	options: {
@@ -125,6 +128,8 @@ const Sketchfull = {
 		width: 10
 	},
 	touches:{},
+	transform: {x: 0, y: 50},
+	zoom: 1,
 
 	Update(timestamp) {
 		Sketchfull.canvas.context.clearRect(0, 0, Sketchfull.canvas.width, Sketchfull.canvas.height);
@@ -154,6 +159,21 @@ const Sketchfull = {
 			Sketchfull.options.width = e.target.value
 		});
 
+		window.addEventListener("wheel", e => {
+			if(e.ctrlKey) { // Zoom
+				e.preventDefault();
+				Sketchfull.zoom = Math.clamp(Sketchfull.zoom - e.deltaY / 1000, 0.01, 1000);
+			} else { // Move
+				Sketchfull.transform.x += -e.deltaX / 25;
+				Sketchfull.transform.y += -e.deltaY / 25;
+			}
+
+			Sketchfull.canvas.style.left = Sketchfull.transform.x + "%";
+			Sketchfull.canvas.style.top  = Sketchfull.transform.y + "%";
+			Sketchfull.canvas.style.width  = Sketchfull.zoom * Sketchfull.layers[0].width + "px";
+			Sketchfull.canvas.style.height  = Sketchfull.zoom * Sketchfull.layers[0].height + "px";
+		});
+
 		Sketchfull.canvas.addEventListener("mousedown", e => {
 			Sketchfull.canvas.isMouseDown = true;
 		});
@@ -166,18 +186,35 @@ const Sketchfull = {
 
 		Sketchfull.canvas.addEventListener("mousemove", e => {
 			if(Sketchfull.canvas.isMouseDown) {
-				Sketchfull.tools.linepixel(Sketchfull.layers[0], e.offsetX - e.movementX, e.offsetY - e.movementY, e.offsetX, e.offsetY);
+				Sketchfull.tools.linepixel(
+					Sketchfull.layers[0],
+					(e.offsetX - e.movementX) / e.srcElement.offsetWidth * Sketchfull.layers[0].width,
+					(e.offsetY - e.movementY) / e.srcElement.offsetHeight * Sketchfull.layers[0].height,
+					e.offsetX / e.srcElement.offsetWidth * Sketchfull.layers[0].width,
+					e.offsetY / e.srcElement.offsetHeight * Sketchfull.layers[0].height
+				);
 			}
 		});
 
 		Sketchfull.canvas.addEventListener("touchmove", e => {
 			for(var i = 0; i < e.changedTouches.length; i++) {
-				Sketchfull.tools.linepixel(Sketchfull.layers[0], Sketchfull.touches[e.changedTouches[i].identifier].pageX - Sketchfull.touches[e.changedTouches[i].identifier].target.offsetLeft, Sketchfull.touches[e.changedTouches[i].identifier].pageY - Sketchfull.touches[e.changedTouches[i].identifier].target.offsetTop + Sketchfull.touches[e.changedTouches[i].identifier].target.offsetHeight/2, e.changedTouches[i].pageX - e.changedTouches[i].target.offsetLeft, e.changedTouches[i].pageY - e.changedTouches[i].target.offsetTop + e.changedTouches[i].target.offsetHeight/2);
+				e.preventDefault();
+				Sketchfull.tools.linepixel(
+					Sketchfull.layers[0],
+					(Sketchfull.touches[e.changedTouches[i].identifier].pageX - Sketchfull.touches[e.changedTouches[i].identifier].target.offsetLeft) / Sketchfull.touches[e.changedTouches[i].identifier].target.offsetWidth * Sketchfull.layers[0].width,
+					(Sketchfull.touches[e.changedTouches[i].identifier].pageY - Sketchfull.touches[e.changedTouches[i].identifier].target.offsetTop + Sketchfull.touches[e.changedTouches[i].identifier].target.offsetHeight/2) / Sketchfull.touches[e.changedTouches[i].identifier].target.offsetHeight * Sketchfull.layers[0].height,
+					(e.changedTouches[i].pageX - e.changedTouches[i].target.offsetLeft) / e.changedTouches[i].target.offsetWidth * Sketchfull.layers[0].width,
+					(e.changedTouches[i].pageY - e.changedTouches[i].target.offsetTop + e.changedTouches[i].target.offsetHeight/2) / e.changedTouches[i].target.offsetHeight * Sketchfull.layers[0].height
+				);
 				Sketchfull.touches[e.changedTouches[i].identifier] = e.changedTouches[i];
 			}
 		});
 
 		Sketchfull.canvas.addEventListener("mouseup", e => {
+			Sketchfull.canvas.isMouseDown = false;
+		});
+
+		Sketchfull.canvas.addEventListener("mouseout", e => {
 			Sketchfull.canvas.isMouseDown = false;
 		});
 
@@ -214,6 +251,16 @@ const Sketchfull = {
 			Sketchfull.layers[0].data[i + 1] = 255 - Sketchfull.layers[0].data[i + 1];
 			Sketchfull.layers[0].data[i + 2] = 255 - Sketchfull.layers[0].data[i + 2];
 		}
+	},
+
+	ResetZoom() {
+		Sketchfull.zoom = 1;
+		Sketchfull.transform = {x: 0, y: 50};
+
+		Sketchfull.canvas.style.left = Sketchfull.transform.x + "%";
+		Sketchfull.canvas.style.top  = Sketchfull.transform.y + "%";
+		Sketchfull.canvas.style.width  = Sketchfull.zoom * Sketchfull.layers[0].width + "px";
+		Sketchfull.canvas.style.height  = Sketchfull.zoom * Sketchfull.layers[0].height + "px";
 	},
 
 	Clear() {
