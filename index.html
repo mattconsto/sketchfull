@@ -20,40 +20,40 @@
 		<li><a onclick="Sketchfull.Download(this)">Download</a></li>
 		<li><a onclick="Sketchfull.Print()">Print</a></li>
 		<li class="divider"></li>
-		<li><a href="#!">Resize Image</a></li>
-		<li><a href="#!">Resize Canvas</a></li>
+		<li><a href="#!" disabled>Resize Image</a></li>
+		<li><a href="#!" disabled>Resize Canvas</a></li>
 	</ul>
 
 	<ul id="dropdown-edit" class="dropdown-content">
-		<li><a href="#!">Undo</a></li>
-		<li><a href="#!">Redo</a></li>
+		<li><a href="#!" disabled>Undo</a></li>
+		<li><a href="#!" disabled>Redo</a></li>
 		<li class="divider"></li>
-		<li><a href="#!">Cut</a></li>
-		<li><a href="#!">Copy</a></li>
-		<li><a href="#!">Paste</a></li>
+		<li><a href="#!" disabled>Cut</a></li>
+		<li><a href="#!" disabled>Copy</a></li>
+		<li><a href="#!" disabled>Paste</a></li>
 		<li class="divider"></li>
-		<li><a href="#!">Clear Selection</a></li>
-		<li><a href="#!">Select All</a></li>
+		<li><a href="#!" disabled>Clear Selection</a></li>
+		<li><a href="#!" disabled>Select All</a></li>
 	</ul>
 
 	<ul id="dropdown-view" class="dropdown-content">
-		<li><a href="#!">Tools</a></li>
-		<li><a href="#!">Color Picker</a></li>
-		<li><a href="#!">Layers</a></li>
+		<li><a href="#!" disabled>Tools</a></li>
+		<li><a href="#!" disabled>Color Picker</a></li>
+		<li><a href="#!" disabled>Layers</a></li>
 		<li class="divider"></li>
 		<li><a onclick="Sketchfull.ResetZoom()">Reset Zoom</a></li>
 	</ul>
 
 	<ul id="dropdown-effects" class="dropdown-content">
-		<li><a href="#!">Flip/Rotate</a></li>
-		<li><a href="#!">Stretch/Skew</a></li>
+		<li><a href="#!" disabled>Flip/Rotate</a></li>
+		<li><a href="#!" disabled>Stretch/Skew</a></li>
 		<li><a onclick="Sketchfull.Invert()">Invert Colors</a></li>
 		<li><a onclick="Sketchfull.Clear()">Clear Canvas</a></li>
 	</ul>
 
 	<ul id="dropdown-help" class="dropdown-content">
-		<li><a href="#!">User Guide</a></li>
-		<li><a href="#!">About</a></li>
+		<li><a href="#!" disabled>User Guide</a></li>
+		<li><a onclick="alert('A bad image editor by Matt Consto.')">About</a></li>
 	</ul>
 
 	<nav>
@@ -81,22 +81,22 @@
 	<div id="sketch-tool-panel" class="card sketch-panel resizable draggable">
 		<div class="card-content sketch-panel-title draggable-handle"></div>
 		<div id="sketch-tools" class="card-content">
-			<a data-tool="undo" class="waves-effect"><i class="material-icons" title="Undo">undo</i></a>
-			<a data-tool="redo" class="waves-effect"><i class="material-icons" title="Redo">redo</i></a>
+			<a data-tool="undo" class="waves-effect" disabled><i class="material-icons" title="Undo">undo</i></a>
+			<a data-tool="redo" class="waves-effect" disabled><i class="material-icons" title="Redo">redo</i></a>
 			<a class="waves-effect"><i class="material-icons">&nbsp;</i></a>
-			<a data-tool="select" class="waves-effect"><i class="material-icons" title="Select">select_all</i></a>
+			<a data-tool="select" class="waves-effect" disabled><i class="material-icons" title="Select">select_all</i></a>
 			<a data-tool="pick" class="waves-effect"><i class="material-icons" title="Picker">colorize</i></a>
 			<a data-tool="erase" class="waves-effect"><i class="material-icons" title="Erase">crop_7_5</i></a>
 			<a data-tool="pencil" class="waves-effect"><i class="material-icons" title="Pencil">create</i></a>
-			<a data-tool="brush" class="waves-effect"><i class="material-icons" title="Brush">brush</i></a>
+			<a data-tool="brush" class="waves-effect" disabled><i class="material-icons" title="Brush">brush</i></a>
 			<a data-tool="fill" class="waves-effect"><i class="material-icons" title="Fill">format_color_fill</i></a>
-			<a data-tool="gradient" class="waves-effect"><i class="material-icons" title="Gradient">gradient</i></a>
-			<a data-tool="spray" class="waves-effect"><i class="material-icons" title="Spray">highlight</i></a>
+			<a data-tool="gradient" class="waves-effect" disabled><i class="material-icons" title="Gradient">gradient</i></a>
+			<a data-tool="spray" class="waves-effect" disabled><i class="material-icons" title="Spray">highlight</i></a>
 			<a class="waves-effect"><i class="material-icons">&nbsp;</i></a>
-			<a data-tool="text" class="waves-effect"><i class="material-icons" title="Text">text_fields</i></a>
-			<a data-tool="line" class="waves-effect"><i class="material-icons" title="Line">remove</i></a>
-			<a data-tool="rectangle" class="waves-effect"><i class="material-icons" title="Rectangle">add_box</i></a>
-			<a data-tool="circle" class="waves-effect"><i class="material-icons" title="Circle">add_circle</i></a>
+			<a data-tool="text" class="waves-effect" disabled><i class="material-icons" title="Text">text_fields</i></a>
+			<a data-tool="line" class="waves-effect" disabled><i class="material-icons" title="Line">remove</i></a>
+			<a data-tool="rectangle" class="waves-effect" disabled><i class="material-icons" title="Rectangle">add_box</i></a>
+			<a data-tool="circle" class="waves-effect" disabled><i class="material-icons" title="Circle">add_circle</i></a>
 			<a class="waves-effect"><i class="material-icons">&nbsp;</i></a>
 			<a data-tool="zoomin" class="waves-effect"><i class="material-icons" title="Zoom-in">zoom_in</i></a>
 			<a data-tool="zoomout" class="waves-effect"><i class="material-icons" title="Zoom-out">zoom_out</i></a>
@@ -117,11 +117,12 @@
 	</div>
 
 	<div id="sketch-container">
-		<canvas id="sketch-canvas">Your browser doesn't support HTML5 Canvas. Visit <a href="http://outdatedbrowser.com">outdatedbrowser.com</a> to help update your browser.</canvas>
+		<canvas id="sketch-canvas" draggable="false">Your browser doesn't support HTML5 Canvas. Visit <a href="http://outdatedbrowser.com">outdatedbrowser.com</a> to help update your browser.</canvas>
 	</div>
 
 	<script src="scripts/jquery-3.2.1.min.js"></script>
 	<script src="scripts/jquery-ui.min.js"></script>
+	<script src="scripts/jquery-ui-touch-punch.min.js"></script>
 	<script src="scripts/materialize.min.js"></script>
 	<script src="scripts/ractive.min.js"></script>
 	<script src="scripts/colpick.js"></script>
