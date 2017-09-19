@@ -1,6 +1,9 @@
 Math.clamp = (value, min, max) => value > min ? (value < max ? value: max) : min;
 Math.lerp  = (v0, v1, t) => v0 * (1 - t) + v1 * t;
 
+// Automatically compile simple templates
+$("script.auto-component[type='text/ractive']").each((index, element) => {Ractive.components[element.id] = Ractive.extend({template: element.innerHTML, isolated: false})});
+
 const Sketchfull = {
 	canvas: [],
 	layers: [
@@ -252,7 +255,8 @@ const Sketchfull = {
 				var text = prompt("Enter text:");
 				if(!text) return;
 
-				Sketchfull.layers.splice(Sketchfull.layer, 0, {type: "text", name: "Text Layer", x: x, y: y, data: {color: Sketchfull.options.color, text: text}});
+				Sketchfull.layers.splice(Sketchfull.layer+1, 0, {type: "text", name: "Text Layer", x: x, y: y, data: {color: Sketchfull.options.color, text: text}});
+				Sketchfull.layer += 1;
 				Sketchfull.dirty = true;
 			},
 			Move(layer, x0, y0, x1, y1) {},
@@ -413,12 +417,20 @@ const Sketchfull = {
 		};
 	},
 
+	Log(message, level) {
+		console.log(message);
+		Materialize.toast(message, 4000)
+	},
+
 	Update(timestamp) {
 		if(Sketchfull.dirty) {
 			Sketchfull.canvas.style.left = Sketchfull.transform.x + "%";
 			Sketchfull.canvas.style.top	= Sketchfull.transform.y + "%";
 			Sketchfull.canvas.style.width	= Sketchfull.zoom * Sketchfull.currentLayer.data.width + "px";
 			Sketchfull.canvas.style.height	= Sketchfull.zoom * Sketchfull.currentLayer.data.height + "px";
+
+			Sketchfull.ractive.set("layers", Sketchfull.layers);
+			Sketchfull.ractive.set("layer", Sketchfull.layer);
 
 			// Draw layers
 			if(Sketchfull.background == "transparent") {
@@ -460,6 +472,12 @@ const Sketchfull = {
 	},
 
 	Init() {
+		Sketchfull.ractive = new Ractive({
+			el: '#sketch-layer-panel-content',
+			template: "#sfui-layer-panel",
+			data: {layers: Sketchfull.layers, layer: Sketchfull.layer}
+		});
+
 		$(".dropdown-button").dropdown();
 		$(".resizable").resizable();
 		$(".draggable").draggable({handle: ".draggable-handle"});
@@ -616,18 +634,27 @@ const Sketchfull = {
 		Sketchfull.dirty = true;
 	},
 
-	NewLayer() {
-		if(Sketchfull.layers.length == 0) {
-			Sketchfull.layers[0] = {type: "bitmap", name: "Bitmap Layer", x: 0, y: 0, data: new ImageData(500, 500)}
-		} else {
-			Sketchfull.layers.splice(Sketchfull.layer, 0, {type: "bitmap", name: "Bitmap Layer", x: 0, y: 0, data: new ImageData(500, 500)});
-		}
+	SelectLayer(layer) {
+		if(layer < 0 || layer >= Sketchfull.layers.length) return;
+		Sketchfull.layer = layer;
+		Sketchfull.dirty = true;
 	},
 
-	DeleteLayer() {
-		if(Sketchfull.layers.length == 0) return;
-		Sketchfull.layers.splice(Sketchfull.layer, 1);
-		Sketchfull.dirty;
+	NewLayer() {
+		if(Sketchfull.layers.length == 0) {
+			Sketchfull.layers[0] = {type: "bitmap", name: "Bitmap Layer", x: 0, y: 0, data: new ImageData(500, 500)};
+			Sketchfull.layer = 0;
+		} else {
+			Sketchfull.layers.splice(Sketchfull.layer + 1, 0, {type: "bitmap", name: "Bitmap Layer", x: 0, y: 0, data: new ImageData(500, 500)});
+			Sketchfull.layer += 1;
+		}
+		Sketchfull.dirty = true;
+	},
+
+	DeleteLayer(layer) {
+		if(layer < 0 || layer >= Sketchfull.layers.length) return;
+		Sketchfull.layers.splice(layer, 1);
+		Sketchfull.dirty = true;
 	},
 
 	ResetZoom() {

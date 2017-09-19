@@ -8,6 +8,25 @@
 	<link rel="stylesheet" href="stylesheets/jquery-ui.min.css" />
 	<link rel="stylesheet" href="stylesheets/colpick.css" />
 	<link rel="stylesheet" href="stylesheets/overrides.css" />
+
+	<script id="sfui-checkbox" class="auto-component" type="text/ractive">
+		<input type="checkbox" name="{{id}}" id="{{id}}" {{#if checked}}checked{{/if}} /><label for="{{id}}">{{label}}</label>
+	</script>
+
+	<script id="sfui-panel" class="auto-component" type="text/ractive">
+		<div id="{{id}}" class="card sketch-panel draggable {{#if resizable}}resizable{{/if}}">
+			<div class="card-content sketch-panel-title draggable-handle">{{title}}<span class="right">&times;</span></div>
+			<div class="card-content">{{>content}}</div>
+		</div>
+	</script>
+
+	<script id="sfui-layer-panel" type="text/ractive">
+		{{#each layers: index}}
+			<p {{#if (layer == index)}}class="red-text"{{/if}}>{{name}} ({{type}}) {{index}} - <a onclick="Sketchfull.SelectLayer({{index}})">Select</a> <a onclick="Sketchfull.DeleteLayer({{index}})">Delete</a></p>
+		{{/each}}
+
+		<p><a onclick="Sketchfull.NewLayer()">New Layer</a></p>
+	</script>
 </head>
 <body>
 	<ul id="dropdown-file" class="dropdown-content">
@@ -111,26 +130,18 @@
 
 	<div id="sketch-layer-panel" class="card sketch-panel resizable draggable hide">
 		<div class="card-content sketch-panel-title draggable-handle"></div>
-		<div class="card-content">
-			<a onclick="Sketchfull.layer = Math.clamp(Sketchfull.layer - 1, 0, Sketchfull.layers.length)">-Layer</a>
-			<br />
-			<a onclick="Sketchfull.layer = Math.clamp(Sketchfull.layer + 1, 0, Sketchfull.layers.length)">+Layer</a>
-			<br />
-			<a onclick="Sketchfull.NewLayer()">New Layer</a>
-			<br />
-			<a onclick="Sketchfull.DeleteLayer()">Delete Layer</a>
-		</div>
+		<div class="card-content" id="sketch-layer-panel-content"></div>
 	</div>
 
 	<div id="sketch-container">
 		<canvas id="sketch-canvas" class="hide" draggable="false">Your browser doesn't support HTML5 Canvas. Visit <a href="http://outdatedbrowser.com">outdatedbrowser.com</a> to help update your browser.</canvas>
 	</div>
 
+	<script src="scripts/ractive.min.js"></script>
 	<script src="scripts/jquery-3.2.1.min.js"></script>
 	<script src="scripts/jquery-ui.min.js"></script>
 	<script src="scripts/jquery-ui-touch-punch.min.js"></script>
 	<script src="scripts/materialize.min.js"></script>
-	<script src="scripts/ractive.min.js"></script>
 	<script src="scripts/colpick.js"></script>
 	<script src="scripts/application.js"></script>
 </body>
