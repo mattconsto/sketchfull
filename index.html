@@ -93,7 +93,7 @@
 			<a data-tool="gradient" class="waves-effect" disabled><i class="material-icons" title="Gradient">gradient</i></a>
 			<a data-tool="spray" class="waves-effect" disabled><i class="material-icons" title="Spray">highlight</i></a>
 			<a class="waves-effect"><i class="material-icons">&nbsp;</i></a>
-			<a data-tool="text" class="waves-effect" disabled><i class="material-icons" title="Text">text_fields</i></a>
+			<a data-tool="text" class="waves-effect"><i class="material-icons" title="Text">text_fields</i></a>
 			<a data-tool="line" class="waves-effect" disabled><i class="material-icons" title="Line">remove</i></a>
 			<a data-tool="rectangle" class="waves-effect" disabled><i class="material-icons" title="Rectangle">add_box</i></a>
 			<a data-tool="circle" class="waves-effect" disabled><i class="material-icons" title="Circle">add_circle</i></a>
@@ -112,7 +112,13 @@
 	<div id="sketch-layer-panel" class="card sketch-panel resizable draggable">
 		<div class="card-content sketch-panel-title draggable-handle"></div>
 		<div class="card-content">
-			Layers
+			<a onclick="Sketchfull.layer = Math.clamp(Sketchfull.layer - 1, 0, Sketchfull.layers.length)">-Layer</a>
+			<br />
+			<a onclick="Sketchfull.layer = Math.clamp(Sketchfull.layer + 1, 0, Sketchfull.layers.length)">+Layer</a>
+			<br />
+			<a onclick="Sketchfull.NewLayer()">New Layer</a>
+			<br />
+			<a onclick="Sketchfull.DeleteLayer()">Delete Layer</a>
 		</div>
 	</div>
 

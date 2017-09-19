@@ -1,10 +1,12 @@
 Math.clamp = (value, min, max) => value > min ? (value < max ? value: max) : min;
+Math.lerp  = (v0, v1, t) => v0 * (1 - t) + v1 * t;
 
 const Sketchfull = {
 	canvas: [],
 	layers: [
-		new ImageData(500, 500)
+		{type: "bitmap", name: "Bitmap Layer", x: 0, y: 0, data: new ImageData(500, 500)}
 	],
+	layer: 0,
 	tools: {
 		undo: {
 
@@ -30,7 +32,17 @@ const Sketchfull = {
 			},
 			toolbar: '<ul><li><span>Color Picker</span></li><li><input type="checkbox" id="sketch-tool-pick-alllayers" checked="unchecked" /><label for="sketch-tool-pick-alllayers">Sample all layers</label></li></ul>',
 			Start(layer, x, y) {
-				$(".colpick").colpickSetColor(Sketchfull.GetPixel(layer, Math.round(x), Math.round(y)));
+				switch(layer.type) {
+					case "bitmap":
+						$(".colpick").colpickSetColor(Sketchfull.GetPixel(layer, Math.round(x), Math.round(y)));
+					case "text":
+					case "line":
+					case "rectangle":
+					case "circle":
+						$(".colpick").colpickSetColor(layer.data.color);
+					default:
+						console.warn("Cannot pick color");
+				}
 			},
 			Move(layer, x0, y0, x1, y1) {
 				this.Start(layer, x1, y1);
@@ -46,14 +58,16 @@ const Sketchfull = {
 				this.Move(layer, x, y, x, y);
 			},
 			Move(layer, x0, y0, x1, y1) {
-				var circle = function(layer, x, y, r) {
+				if(layer.type != "bitmap") return;
+
+				var circle = function(bitmap, x, y, r) {
 					r = Math.round(r);
 
 					for(var i = -r-1; i < r+1; i++) {
 						var height = Math.sqrt(r * r - i * i);
 
 						for (var j = Math.floor(-height); j < Math.ceil(height); j++)
-							Sketchfull.MinimumPixel(layer, x + i, y + j, 255 - Math.clamp(height - Math.abs(j), 0, 1) * 255);
+							Sketchfull.MinimumPixel(bitmap, x + i, y + j, 255 - Math.clamp(height - Math.abs(j), 0, 1) * 255);
 					}
 				}
 
@@ -70,14 +84,14 @@ const Sketchfull = {
 
 				var r = Math.round(Sketchfull.options.width/2);
 
-				circle(layer, x0, y0, r);
+				circle(layer.data, x0, y0, r);
 
 				while(true) {
 
 					for (var x = -r-1; x < r+1; x++)
-						Sketchfull.MinimumPixel(layer, x0 + x, y0, 255 - Math.clamp(r + 0.5 - Math.abs(x), 0, 1) * 255);
+						Sketchfull.MinimumPixel(layer.data, x0 + x, y0, 255 - Math.clamp(r + 0.5 - Math.abs(x), 0, 1) * 255);
 					for (var y = -r-1; y < r+1; y++)
-						Sketchfull.MinimumPixel(layer, x0, y0 + y, 255 - Math.clamp(r + 0.5 - Math.abs(y), 0, 1) * 255);
+						Sketchfull.MinimumPixel(layer.data, x0, y0 + y, 255 - Math.clamp(r + 0.5 - Math.abs(y), 0, 1) * 255);
 
 					if((x0 == x1) && (y0 == y1)) break;
 					var e2 = 2 * err;
@@ -85,7 +99,7 @@ const Sketchfull = {
 					if(e2 <	dx) {err += dx; y0 += sy;}
 				}
 
-				circle(layer, x0, y0, r);
+				circle(layer.data, x0, y0, r);
 
 				Sketchfull.dirty = true;
 			},
@@ -100,14 +114,16 @@ const Sketchfull = {
 				this.Move(layer, x, y, x, y);
 			},
 			Move(layer, x0, y0, x1, y1) {
-				var circle = function(layer, x, y, r) {
+				if(layer.type != "bitmap") return;
+
+				var circle = function(bitmap, x, y, r) {
 					r = Math.round(r);
 
 					for(var i = -r-1; i < r+1; i++) {
 						var height = Math.sqrt(r * r - i * i);
 
 						for (var j = Math.floor(-height); j < Math.ceil(height); j++)
-							Sketchfull.MaximumPixel(layer, x + i, y + j, Math.clamp(height - Math.abs(j), 0, 1) * 255);
+							Sketchfull.MaximumPixel(bitmap, x + i, y + j, Math.clamp(height - Math.abs(j), 0, 1) * 255);
 					}
 				}
 
@@ -124,14 +140,14 @@ const Sketchfull = {
 
 				var r = Math.round(Sketchfull.options.width/2);
 
-				circle(layer, x0, y0, r);
+				circle(layer.data, x0, y0, r);
 
 				while(true) {
 
 					for (var x = -r-1; x < r+1; x++)
-						Sketchfull.MaximumPixel(layer, x0 + x, y0, Math.clamp(r + 0.5 - Math.abs(x), 0, 1) * 255);
+						Sketchfull.MaximumPixel(layer.data, x0 + x, y0, Math.clamp(r + 0.5 - Math.abs(x), 0, 1) * 255);
 					for (var y = -r-1; y < r+1; y++)
-						Sketchfull.MaximumPixel(layer, x0, y0 + y, Math.clamp(r + 0.5 - Math.abs(y), 0, 1) * 255);
+						Sketchfull.MaximumPixel(layer.data, x0, y0 + y, Math.clamp(r + 0.5 - Math.abs(y), 0, 1) * 255);
 
 					if((x0 == x1) && (y0 == y1)) break;
 					var e2 = 2 * err;
@@ -139,7 +155,7 @@ const Sketchfull = {
 					if(e2 <	dx) {err += dx; y0 += sy;}
 				}
 
-				circle(layer, x0, y0, r);
+				circle(layer.data, x0, y0, r);
 
 				Sketchfull.dirty = true;
 			},
@@ -163,6 +179,8 @@ const Sketchfull = {
 			},
 			toolbar: '<ul><li><span>Fill</span></li></ul>',
 			Start(layer, x, y) { // These are floats
+				if(layer.type != "bitmap") return;
+
 				x = Math.round(x);
 				y = Math.round(y);
 
@@ -230,20 +248,22 @@ const Sketchfull = {
 			options: {
 			},
 			toolbar: '<ul><li><span>Text</span></li></ul>',
-			Start(x, y) {
-				console.log(x, y);
+			Start(layer, x, y) {
+				var text = prompt("Enter text:");
+				if(!text) return;
+
+				Sketchfull.layers.splice(Sketchfull.layer, 0, {type: "text", name: "Text Layer", x: x, y: y, data: {color: Sketchfull.options.color, text: text}});
+				Sketchfull.dirty = true;
 			},
-			Move(x, y, dx, dy) {
-			},
-			End(x, y) {
-			}
+			Move(layer, x0, y0, x1, y1) {},
+			End(layer, x, y) {}
 		},
 		line: {
 			options: {
 			},
 			toolbar: '<ul><li><span>Line</span></li></ul>',
 			Start(x, y) {
-				console.log(x, y);
+
 			},
 			Move(x, y, dx, dy) {
 			},
@@ -275,38 +295,22 @@ const Sketchfull = {
 			}
 		},
 		zoomin: {
-			options: {
-			},
 			toolbar: '<ul><li><span>Zoom</span></li></ul>',
 			Start(layer, x, y) {
 				Sketchfull.zoom = Math.clamp(Sketchfull.zoom + 0.2, 0.01, 1000);
-
-				Sketchfull.canvas.style.left = Sketchfull.transform.x + "%";
-				Sketchfull.canvas.style.top	= Sketchfull.transform.y + "%";
-				Sketchfull.canvas.style.width	= Sketchfull.zoom * Sketchfull.layers[0].width + "px";
-				Sketchfull.canvas.style.height	= Sketchfull.zoom * Sketchfull.layers[0].height + "px";
+				Sketchfull.dirty = true;
 			},
-			Move(layer, x0, y0, x1, y1) {
-			},
-			End(layer, x, y) {
-			}
+			Move(layer, x0, y0, x1, y1) {},
+			End(layer, x, y) {}
 		},
 		zoomout: {
-			options: {
-			},
 			toolbar: '<ul><li><span>Zoom</span></li></ul>',
 			Start(layer, x, y) {
 				Sketchfull.zoom = Math.clamp(Sketchfull.zoom - 0.2, 0.01, 1000);
-
-				Sketchfull.canvas.style.left = Sketchfull.transform.x + "%";
-				Sketchfull.canvas.style.top	= Sketchfull.transform.y + "%";
-				Sketchfull.canvas.style.width	= Sketchfull.zoom * Sketchfull.layers[0].width + "px";
-				Sketchfull.canvas.style.height	= Sketchfull.zoom * Sketchfull.layers[0].height + "px";
+				Sketchfull.dirty = true;
 			},
-			Move(layer, x0, y0, x1, y1) {
-			},
-			End(layer, x, y) {
-			}
+			Move(layer, x0, y0, x1, y1) {},
+			End(layer, x, y) {}
 		},
 
 		curve(layer, x0, y0, x1, y1, x2, y2) {
@@ -373,36 +377,49 @@ const Sketchfull = {
 	dirty: false,
 	isMouseDown: false,
 
-	MinimumPixel(layer, x, y, alpha) {
-		if(x < 0 || y < 0 || x >= layer.width || y >= layer.height) return;
-
-		// console.log(layer, x, y, alpha);
-		layer.data[y * (layer.width * 4) + x * 4 + 0] = (Sketchfull.options.color.r) & 0xff;
-		layer.data[y * (layer.width * 4) + x * 4 + 1] = (Sketchfull.options.color.g) & 0xff;
-		layer.data[y * (layer.width * 4) + x * 4 + 2] = (Sketchfull.options.color.b) & 0xff;
-		layer.data[y * (layer.width * 4) + x * 4 + 3] = Math.min(layer.data[y * (layer.width * 4) + x * 4 + 3], alpha & 0xff);
+	get currentLayer() {
+		return Sketchfull.layers[Sketchfull.layer];
 	},
 
-	MaximumPixel(layer, x, y, alpha) {
-		if(x < 0 || y < 0 || x >= layer.width || y >= layer.height) return;
-
-		// console.log(layer, x, y, alpha);
-		layer.data[y * (layer.width * 4) + x * 4 + 0] = (Sketchfull.options.color.r) & 0xff;
-		layer.data[y * (layer.width * 4) + x * 4 + 1] = (Sketchfull.options.color.g) & 0xff;
-		layer.data[y * (layer.width * 4) + x * 4 + 2] = (Sketchfull.options.color.b) & 0xff;
-		layer.data[y * (layer.width * 4) + x * 4 + 3] = Math.max(layer.data[y * (layer.width * 4) + x * 4 + 3], alpha & 0xff);
+	get currentTool() {
+		return Sketchfull.tools[Sketchfull.tool];
 	},
 
-	GetPixel(layer, x, y) {
+	MinimumPixel(bitmap, x, y, alpha) {
+		if(x < 0 || y < 0 || x >= bitmap.width || y >= bitmap.height) return;
+
+		// console.log(bitmap, x, y, alpha);
+		bitmap.data[y * (bitmap.width * 4) + x * 4 + 0] = (Sketchfull.options.color.r) & 0xff;
+		bitmap.data[y * (bitmap.width * 4) + x * 4 + 1] = (Sketchfull.options.color.g) & 0xff;
+		bitmap.data[y * (bitmap.width * 4) + x * 4 + 2] = (Sketchfull.options.color.b) & 0xff;
+		bitmap.data[y * (bitmap.width * 4) + x * 4 + 3] = Math.min(bitmap.data[y * (bitmap.width * 4) + x * 4 + 3], alpha & 0xff);
+	},
+
+	MaximumPixel(bitmap, x, y, alpha) {
+		if(x < 0 || y < 0 || x >= bitmap.width || y >= bitmap.height) return;
+
+		// console.log(bitmap, x, y, alpha);
+		bitmap.data[y * (bitmap.width * 4) + x * 4 + 0] = (Sketchfull.options.color.r) & 0xff;
+		bitmap.data[y * (bitmap.width * 4) + x * 4 + 1] = (Sketchfull.options.color.g) & 0xff;
+		bitmap.data[y * (bitmap.width * 4) + x * 4 + 2] = (Sketchfull.options.color.b) & 0xff;
+		bitmap.data[y * (bitmap.width * 4) + x * 4 + 3] = Math.max(bitmap.data[y * (bitmap.width * 4) + x * 4 + 3], alpha & 0xff);
+	},
+
+	GetPixel(bitmap, x, y) {
 		return {
-			r: layer.data[y * (layer.width * 4) + x * 4 + 0],
-			g: layer.data[y * (layer.width * 4) + x * 4 + 1],
-			b: layer.data[y * (layer.width * 4) + x * 4 + 2]
+			r: bitmap.data[y * (bitmap.width * 4) + x * 4 + 0],
+			g: bitmap.data[y * (bitmap.width * 4) + x * 4 + 1],
+			b: bitmap.data[y * (bitmap.width * 4) + x * 4 + 2]
 		};
 	},
 
 	Update(timestamp) {
 		if(Sketchfull.dirty) {
+			Sketchfull.canvas.style.left = Sketchfull.transform.x + "%";
+			Sketchfull.canvas.style.top	= Sketchfull.transform.y + "%";
+			Sketchfull.canvas.style.width	= Sketchfull.zoom * Sketchfull.currentLayer.data.width + "px";
+			Sketchfull.canvas.style.height	= Sketchfull.zoom * Sketchfull.currentLayer.data.height + "px";
+
 			// Draw layers
 			if(Sketchfull.background == "transparent") {
 				Sketchfull.canvas.context.clearRect(0, 0, Sketchfull.canvas.width, Sketchfull.canvas.height);
@@ -410,7 +427,31 @@ const Sketchfull = {
 				Sketchfull.canvas.context.fillStyle = Sketchfull.background;
 				Sketchfull.canvas.context.fillRect(0, 0, Sketchfull.canvas.width, Sketchfull.canvas.height);
 			}
-			Sketchfull.canvas.context.putImageData(Sketchfull.layers[0], 0, 0);
+
+			for(var i = 0; i < Sketchfull.layers.length; i++) {
+				switch(Sketchfull.layers[i].type) {
+					case "bitmap": {
+						console.log("Draw bitmap");
+						var last = Sketchfull.canvas.context.getImageData(0, 0, Sketchfull.canvas.width, Sketchfull.canvas.height);
+						var next = Sketchfull.layers[i].data;
+						for(var j = 0; j < last.data.length; j += 4) {
+							last.data[j + 0] = Math.round(Math.lerp(last.data[j + 0], next.data[j + 0], next.data[j + 3] / 255));
+							last.data[j + 1] = Math.round(Math.lerp(last.data[j + 1], next.data[j + 1], next.data[j + 3] / 255));
+							last.data[j + 2] = Math.round(Math.lerp(last.data[j + 2], next.data[j + 2], next.data[j + 3] / 255));
+							last.data[j + 3] = Math.min(255, last.data[j + 3] + next.data[j + 3]);
+						}
+						Sketchfull.canvas.context.putImageData(last, 0, 0);
+					}; break;
+					case "text": {
+						console.log("Draw text");
+						Sketchfull.canvas.context.font = "20px Arial";
+						Sketchfull.canvas.context.fillStyle = "rgb(" + Sketchfull.layers[i].data.color.r + ", " + Sketchfull.layers[i].data.color.g + ", " + Sketchfull.layers[i].data.color.b + ")";
+						Sketchfull.canvas.context.fillText(Sketchfull.layers[i].data.text, Sketchfull.layers[i].x, Sketchfull.layers[i].y);
+					}; break;
+					default:
+						console.warn("Cannot draw layer");
+				}
+			}
 
 			Sketchfull.dirty = false;
 		}
@@ -425,9 +466,7 @@ const Sketchfull = {
 		$(".colpick").colpick({
 			color: "0000ff",
 			flat: true,
-			onChange: function(hsb, hex, rgb, el, bySetColor) {
-				Sketchfull.options.color = rgb
-			}
+			onChange: (hsb, hex, rgb, el, bySetColor) => Sketchfull.options.color = rgb
 		});
 
 		Sketchfull.canvas = $("#sketch-canvas")[0];
@@ -459,16 +498,16 @@ const Sketchfull = {
 
 			Sketchfull.canvas.style.left = Sketchfull.transform.x + "%";
 			Sketchfull.canvas.style.top	= Sketchfull.transform.y + "%";
-			Sketchfull.canvas.style.width	= Sketchfull.zoom * Sketchfull.layers[0].width + "px";
-			Sketchfull.canvas.style.height	= Sketchfull.zoom * Sketchfull.layers[0].height + "px";
+			Sketchfull.canvas.style.width	= Sketchfull.zoom * Sketchfull.canvas.width + "px";
+			Sketchfull.canvas.style.height	= Sketchfull.zoom * Sketchfull.canvas.height + "px";
 		});
 
 		Sketchfull.canvas.addEventListener("mousedown", e => {
 			Sketchfull.isMouseDown = true;
 			Sketchfull.tools[Sketchfull.tool].Start(
-				Sketchfull.layers[0],
-				(e.pageX - Sketchfull.canvas.offsetLeft) / Sketchfull.canvas.offsetWidth * Sketchfull.layers[0].width,
-				(e.pageY - Sketchfull.canvas.offsetTop + Sketchfull.canvas.offsetHeight/2) / Sketchfull.canvas.offsetHeight * Sketchfull.layers[0].height
+				Sketchfull.currentLayer,
+				(e.pageX - Sketchfull.canvas.offsetLeft) / Sketchfull.canvas.offsetWidth * Sketchfull.canvas.width,
+				(e.pageY - Sketchfull.canvas.offsetTop + Sketchfull.canvas.offsetHeight/2) / Sketchfull.canvas.offsetHeight * Sketchfull.canvas.height
 			);
 		});
 
@@ -476,9 +515,9 @@ const Sketchfull = {
 			for(var i = 0; i < e.changedTouches.length; i++) {
 				Sketchfull.touches[e.changedTouches[i].identifier] = e.changedTouches[i];
 				Sketchfull.tools[Sketchfull.tool].Start(
-					Sketchfull.layers[0],
-					(e.changedTouches[i].pageX - e.changedTouches[i].target.offsetLeft) / e.changedTouches[i].target.offsetWidth * Sketchfull.layers[0].width,
-					(e.changedTouches[i].pageY - e.changedTouches[i].target.offsetTop + e.changedTouches[i].target.offsetHeight/2) / e.changedTouches[i].target.offsetHeight * Sketchfull.layers[0].height
+					Sketchfull.currentLayer,
+					(e.changedTouches[i].pageX - e.changedTouches[i].target.offsetLeft) / e.changedTouches[i].target.offsetWidth * Sketchfull.canvas.width,
+					(e.changedTouches[i].pageY - e.changedTouches[i].target.offsetTop + e.changedTouches[i].target.offsetHeight/2) / e.changedTouches[i].target.offsetHeight * Sketchfull.canvas.height
 				);
 			}
 		});
@@ -486,11 +525,11 @@ const Sketchfull = {
 		window.addEventListener("mousemove", e => {
 			if(Sketchfull.isMouseDown) {
 				Sketchfull.tools[Sketchfull.tool].Move(
-					Sketchfull.layers[0],
-					((e.pageX - Sketchfull.canvas.offsetLeft) - e.movementX) / Sketchfull.canvas.offsetWidth * Sketchfull.layers[0].width,
-					((e.pageY - Sketchfull.canvas.offsetTop + Sketchfull.canvas.offsetHeight/2) - e.movementY) / Sketchfull.canvas.offsetHeight * Sketchfull.layers[0].height,
-					(e.pageX - Sketchfull.canvas.offsetLeft) / Sketchfull.canvas.offsetWidth * Sketchfull.layers[0].width,
-					(e.pageY - Sketchfull.canvas.offsetTop + Sketchfull.canvas.offsetHeight/2) / Sketchfull.canvas.offsetHeight * Sketchfull.layers[0].height
+					Sketchfull.currentLayer,
+					((e.pageX - Sketchfull.canvas.offsetLeft) - e.movementX) / Sketchfull.canvas.offsetWidth * Sketchfull.canvas.width,
+					((e.pageY - Sketchfull.canvas.offsetTop + Sketchfull.canvas.offsetHeight/2) - e.movementY) / Sketchfull.canvas.offsetHeight * Sketchfull.canvas.height,
+					(e.pageX - Sketchfull.canvas.offsetLeft) / Sketchfull.canvas.offsetWidth * Sketchfull.canvas.width,
+					(e.pageY - Sketchfull.canvas.offsetTop + Sketchfull.canvas.offsetHeight/2) / Sketchfull.canvas.offsetHeight * Sketchfull.canvas.height
 				);
 			}
 		});
@@ -500,11 +539,11 @@ const Sketchfull = {
 			e.preventDefault();
 			for(var i = 0; i < e.changedTouches.length; i++) {
 				Sketchfull.tools[Sketchfull.tool].Move(
-					Sketchfull.layers[0],
-					(Sketchfull.touches[e.changedTouches[i].identifier].pageX - Sketchfull.touches[e.changedTouches[i].identifier].target.offsetLeft) / Sketchfull.touches[e.changedTouches[i].identifier].target.offsetWidth * Sketchfull.layers[0].width,
-					(Sketchfull.touches[e.changedTouches[i].identifier].pageY - Sketchfull.touches[e.changedTouches[i].identifier].target.offsetTop + Sketchfull.touches[e.changedTouches[i].identifier].target.offsetHeight/2) / Sketchfull.touches[e.changedTouches[i].identifier].target.offsetHeight * Sketchfull.layers[0].height,
-					(e.changedTouches[i].pageX - e.changedTouches[i].target.offsetLeft) / e.changedTouches[i].target.offsetWidth * Sketchfull.layers[0].width,
-					(e.changedTouches[i].pageY - e.changedTouches[i].target.offsetTop + e.changedTouches[i].target.offsetHeight/2) / e.changedTouches[i].target.offsetHeight * Sketchfull.layers[0].height
+					Sketchfull.currentLayer,
+					(Sketchfull.touches[e.changedTouches[i].identifier].pageX - Sketchfull.touches[e.changedTouches[i].identifier].target.offsetLeft) / Sketchfull.touches[e.changedTouches[i].identifier].target.offsetWidth * Sketchfull.canvas.width,
+					(Sketchfull.touches[e.changedTouches[i].identifier].pageY - Sketchfull.touches[e.changedTouches[i].identifier].target.offsetTop + Sketchfull.touches[e.changedTouches[i].identifier].target.offsetHeight/2) / Sketchfull.touches[e.changedTouches[i].identifier].target.offsetHeight * Sketchfull.canvas.height,
+					(e.changedTouches[i].pageX - e.changedTouches[i].target.offsetLeft) / e.changedTouches[i].target.offsetWidth * Sketchfull.canvas.width,
+					(e.changedTouches[i].pageY - e.changedTouches[i].target.offsetTop + e.changedTouches[i].target.offsetHeight/2) / e.changedTouches[i].target.offsetHeight * Sketchfull.canvas.height
 				);
 				Sketchfull.touches[e.changedTouches[i].identifier] = e.changedTouches[i];
 			}
@@ -513,18 +552,18 @@ const Sketchfull = {
 		Sketchfull.canvas.addEventListener("mouseup", e => {
 			Sketchfull.isMouseDown = false;
 			Sketchfull.tools[Sketchfull.tool].End(
-				Sketchfull.layers[0],
-				(e.pageX - Sketchfull.canvas.offsetLeft) / Sketchfull.canvas.offsetWidth * Sketchfull.layers[0].width,
-				(e.pageY - Sketchfull.canvas.offsetTop + Sketchfull.canvas.offsetHeight/2) / Sketchfull.canvas.offsetHeight * Sketchfull.layers[0].height
+				Sketchfull.currentLayer,
+				(e.pageX - Sketchfull.canvas.offsetLeft) / Sketchfull.canvas.offsetWidth * Sketchfull.canvas.width,
+				(e.pageY - Sketchfull.canvas.offsetTop + Sketchfull.canvas.offsetHeight/2) / Sketchfull.canvas.offsetHeight * Sketchfull.canvas.height
 			);
 		});
 
 		Sketchfull.canvas.addEventListener("touchend", e => {
 			for(var i = 0; i < e.changedTouches.length; i++) {
 				Sketchfull.tools[Sketchfull.tool].End(
-					Sketchfull.layers[0],
-					(e.changedTouches[i].pageX - e.changedTouches[i].target.offsetLeft) / e.changedTouches[i].target.offsetWidth * Sketchfull.layers[0].width,
-					(e.changedTouches[i].pageY - e.changedTouches[i].target.offsetTop + e.changedTouches[i].target.offsetHeight/2) / e.changedTouches[i].target.offsetHeight * Sketchfull.layers[0].height
+					Sketchfull.currentLayer,
+					(e.changedTouches[i].pageX - e.changedTouches[i].target.offsetLeft) / e.changedTouches[i].target.offsetWidth * Sketchfull.canvas.width,
+					(e.changedTouches[i].pageY - e.changedTouches[i].target.offsetTop + e.changedTouches[i].target.offsetHeight/2) / e.changedTouches[i].target.offsetHeight * Sketchfull.canvas.height
 				);
 				delete Sketchfull.touches[e.changedTouches[i].identifier];
 			}
@@ -544,7 +583,7 @@ const Sketchfull = {
 				Sketchfull.canvas.width = canvas.width = image.width;
 				Sketchfull.canvas.height = canvas.height = image.height;
 				context.drawImage(image, 0, 0);
-				Sketchfull.layers[0] = context.getImageData(0, 0, image.width, image.height);
+				Sketchfull.layers = {type: "bitmap", name: event.target.fileName, x: 0, y: 0, data: context.getImageData(0, 0, image.width, image.height)};
 				Sketchfull.dirty = true;
 			}
 			image.src = event.target.result;
@@ -553,26 +592,51 @@ const Sketchfull = {
 	},
 
 	Invert() {
-		for(var i = 0; i < Sketchfull.layers[0].data.length; i += 4) {
-			Sketchfull.layers[0].data[i + 0] = 255 - Sketchfull.layers[0].data[i + 0];
-			Sketchfull.layers[0].data[i + 1] = 255 - Sketchfull.layers[0].data[i + 1];
-			Sketchfull.layers[0].data[i + 2] = 255 - Sketchfull.layers[0].data[i + 2];
+		switch(Sketchfull.currentLayer.type) {
+			case "bitmap":
+				for(var i = 0; i < Sketchfull.currentLayer.data.length; i += 4) {
+					Sketchfull.currentLayer.data[i + 0] = 255 - Sketchfull.currentLayer.data[i + 0];
+					Sketchfull.currentLayer.data[i + 1] = 255 - Sketchfull.currentLayer.data[i + 1];
+					Sketchfull.currentLayer.data[i + 2] = 255 - Sketchfull.currentLayer.data[i + 2];
+				};
+				break;
+			case "text":
+			case "line":
+			case "rectangle":
+			case "circle":
+				Sketchfull.currentLayer.data.color = {r: 255 - Sketchfull.currentLayer.data.color.r, g: 255 - Sketchfull.currentLayer.data.color.g, b: 255 - Sketchfull.currentLayer.data.color.b};
+				break;
+			default:
+				console.warn("Cannot invert the current layer")
 		}
 		Sketchfull.dirty = true;
+	},
+
+	NewLayer() {
+		if(Sketchfull.layers.length == 0) {
+			Sketchfull.layers[0] = {type: "bitmap", name: "Bitmap Layer", x: 0, y: 0, data: new ImageData(500, 500)}
+		} else {
+			Sketchfull.layers.splice(Sketchfull.layer, 0, {type: "bitmap", name: "Bitmap Layer", x: 0, y: 0, data: new ImageData(500, 500)});
+		}
+	},
+
+	DeleteLayer() {
+		if(Sketchfull.layers.length == 0) return;
+		Sketchfull.layers.splice(Sketchfull.layer, 1);
+		Sketchfull.dirty;
 	},
 
 	ResetZoom() {
 		Sketchfull.zoom = 1;
 		Sketchfull.transform = {x: 0, y: 50};
-
-		Sketchfull.canvas.style.left = Sketchfull.transform.x + "%";
-		Sketchfull.canvas.style.top	= Sketchfull.transform.y + "%";
-		Sketchfull.canvas.style.width	= Sketchfull.zoom * Sketchfull.layers[0].width + "px";
-		Sketchfull.canvas.style.height	= Sketchfull.zoom * Sketchfull.layers[0].height + "px";
+		Sketchfull.dirty = true;
 	},
 
 	Clear() {
-		Sketchfull.layers = [new ImageData(500, 500)];
+		switch(Sketchfull.currentLayer.type) {
+			case "bitmap": Sketchfull.currentLayer.data = new ImageData(Sketchfull.currentLayer.data.width, Sketchfull.currentLayer.data.height); break;
+			default: Sketchfull.layers.splice(Sketchfull.layer, 1); break; // Little point clearing a line or text.
+		}
 		Sketchfull.dirty = true;
 	},
 
