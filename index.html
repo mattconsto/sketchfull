@@ -70,7 +70,7 @@
 	</nav>
 
 	<nav class="red lighten-2">
-		<div id="sketch-toolbar" class="nav-wrapper">
+		<div id="sketch-toolbar" class="nav-wrapper hide">
 			<ul>
 				<li><span>Line Thickness</span></li>
 				<li><span class="range-field"><input type="range" id="sketch-thickness" min="1" max="250" value="5" /></span></li>
@@ -78,7 +78,7 @@
 		</div>
 	</nav>
 
-	<div id="sketch-tool-panel" class="card sketch-panel resizable draggable">
+	<div id="sketch-tool-panel" class="card sketch-panel resizable draggable hide">
 		<div class="card-content sketch-panel-title draggable-handle"></div>
 		<div id="sketch-tools" class="card-content">
 			<a data-tool="undo" class="waves-effect" disabled><i class="material-icons" title="Undo">undo</i></a>
@@ -103,13 +103,13 @@
 		</div>
 	</div>
 
-	<div id="sketch-color-panel" class="card sketch-panel draggable">
+	<div id="sketch-color-panel" class="card sketch-panel draggable hide">
 		<div class="card-content sketch-panel-title draggable-handle"></div>
 		<div class="card-content colpick">
 		</div>
 	</div>
 
-	<div id="sketch-layer-panel" class="card sketch-panel resizable draggable">
+	<div id="sketch-layer-panel" class="card sketch-panel resizable draggable hide">
 		<div class="card-content sketch-panel-title draggable-handle"></div>
 		<div class="card-content">
 			<a onclick="Sketchfull.layer = Math.clamp(Sketchfull.layer - 1, 0, Sketchfull.layers.length)">-Layer</a>
@@ -123,7 +123,7 @@
 	</div>
 
 	<div id="sketch-container">
-		<canvas id="sketch-canvas" draggable="false">Your browser doesn't support HTML5 Canvas. Visit <a href="http://outdatedbrowser.com">outdatedbrowser.com</a> to help update your browser.</canvas>
+		<canvas id="sketch-canvas" class="hide" draggable="false">Your browser doesn't support HTML5 Canvas. Visit <a href="http://outdatedbrowser.com">outdatedbrowser.com</a> to help update your browser.</canvas>
 	</div>
 
 	<script src="scripts/jquery-3.2.1.min.js"></script>

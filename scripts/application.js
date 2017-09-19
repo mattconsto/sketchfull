@@ -569,6 +569,10 @@ const Sketchfull = {
 			}
 		});
 
+		$(".sketch-panel").removeClass("hide");
+		$("#sketch-canvas").removeClass("hide");
+		$("#sketch-toolbar").removeClass("hide");
+
 		window.requestAnimationFrame(Sketchfull.Update);
 	},
 
