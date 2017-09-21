@@ -19,13 +19,11 @@ const Sketchfull = {
 		},
 		move: {
 			toolbar: '<ul><li><span>Move</span></li></ul>',
-			Start(layer, x, y) {},
 			Move(layer, x0, y0, x1, y1) {
 				layer.x += x1 - x0;
 				layer.y += y1 - y0;
 				Sketchfull.dirty = true;
-			},
-			End(layer, x, y) {}
+			}
 		},
 		select: {
 			options: {
@@ -61,14 +59,17 @@ const Sketchfull = {
 			},
 			Move(layer, x0, y0, x1, y1) {
 				this.Start(layer, x1, y1);
-			},
-			End(layer, x, y) {
 			}
 		},
 		erase: {
 			options: {
+				thickness: 5,
 			},
-			toolbar: '<ul><li><span>Eraser</span></li><li><span>Line Thickness</span></li><li><span class="range-field"><input type="range" id="sketch-thickness" min="1" max="250" value="5" /></span></li></ul>',
+			toolbar: '<ul><li><span>Eraser</span></li><li><span>Line Thickness</span></li><li><span class="range-field"><input type="range" id="sketch-thickness" min="1" max="250" /></span></li></ul>',
+			Init() {
+				$("#sketch-thickness").val(this.options.thickness);
+				$("#sketch-thickness").on("change", e => {this.options.thickness = parseInt(e.target.value)});
+			},
 			Start(layer, x, y) {
 				this.Move(layer, x, y, x, y);
 			},
@@ -97,7 +98,7 @@ const Sketchfull = {
 				var sy = (y0 < y1) ? 1 : -1;
 				var err = dx - dy;
 
-				var r = Math.round(Sketchfull.options.width/2);
+				var r = Math.round(this.options.thickness/2);
 
 				circle(layer.data, x0, y0, r);
 
@@ -117,14 +118,17 @@ const Sketchfull = {
 				circle(layer.data, x0, y0, r);
 
 				Sketchfull.dirty = true;
-			},
-			End(layer, x, y) {
 			}
 		},
 		pencil: {
 			options: {
+				thickness: 5,
 			},
-			toolbar: '<ul><li><span>Pencil</span></li><li><span>Line Thickness</span></li><li><span class="range-field"><input type="range" id="sketch-thickness" min="1" max="250" value="5" /></span></li></ul>',
+			toolbar: '<ul><li><span>Pencil</span></li><li><span>Line Thickness</span></li><li><span class="range-field"><input type="range" id="sketch-thickness" min="1" max="250" /></span></li></ul>',
+			Init() {
+				$("#sketch-thickness").val(this.options.thickness);
+				$("#sketch-thickness").on("change", e => {this.options.thickness = parseInt(e.target.value)});
+			},
 			Start(layer, x, y) {
 				this.Move(layer, x, y, x, y);
 			},
@@ -153,7 +157,7 @@ const Sketchfull = {
 				var sy = (y0 < y1) ? 1 : -1;
 				var err = dx - dy;
 
-				var r = Math.round(Sketchfull.options.width/2);
+				var r = Math.round(this.options.thickness/2);
 
 				circle(layer.data, x0, y0, r);
 
@@ -172,8 +176,6 @@ const Sketchfull = {
 				circle(layer.data, x0, y0, r);
 
 				Sketchfull.dirty = true;
-			},
-			End(layer, x, y) {
 			}
 		},
 		brush: {
@@ -190,8 +192,13 @@ const Sketchfull = {
 		},
 		fill: {
 			options: {
+				threshold: 0,
 			},
 			toolbar: '<ul><li><span>Fill</span></li></ul>',
+			Init() {
+				// $("#sketch-threshold").val(this.options.threshold);
+				// $("#sketch-threshold").on("change", e => {this.options.threshold = parseInt(e.target.value) / 100 * 255**3});
+			},
 			Start(layer, x, y) { // These are floats
 				if(layer.type != "bitmap") return;
 				var bitmap = layer.data;
@@ -199,7 +206,7 @@ const Sketchfull = {
 				x = Math.round(x);
 				y = Math.round(y);
 
-				var threshold = 0;
+				var threshold = this.options.threshold;
 				var targetColor = Sketchfull.GetPixel(bitmap, x, y);
 				var replacementColor = Sketchfull.options.color;
 				var difference = (a, b, threshold) => Math.abs(a.r - b.r) + Math.abs(a.g - b.g) + Math.abs(a.b - b.b) <= threshold;
@@ -229,10 +236,6 @@ const Sketchfull = {
 				}
 
 				Sketchfull.dirty = true;
-			},
-			Move(layer, x0, y0, x1, y1) {
-			},
-			End(layer, x, y) {
 			}
 		},
 		gradient: {
@@ -248,26 +251,32 @@ const Sketchfull = {
 			}
 		},
 		spray: {
-			toolbar: '<ul><li><span>Spray</span></li></ul>',
+			options: {
+				thickness: 5,
+				chance: 0.75,
+			},
+			toolbar: '<ul><li><span>Spray</span></li><li><span>Line Thickness</span></li><li><span class="range-field"><input type="range" id="sketch-thickness" min="1" max="250" /></span></li><li><span>Chance</span></li><li><span class="range-field"><input type="range" id="sketch-chance" min="0" max="100" /></span></li></ul>',
+			Init() {
+				$("#sketch-thickness").val(this.options.thickness);
+				$("#sketch-thickness").on("change", e => {this.options.thickness = parseInt(e.target.value)});
+				$("#sketch-chance").val(this.options.chance * 100);
+				$("#sketch-chance").on("change", e => {this.options.chance = parseInt(e.target.value) / 100});
+			},
 			Start(layer, x, y) {
 				if(layer.type != "bitmap") return;
 
-				r = Math.round(Sketchfull.options.width/2);
+				r = Math.round(this.options.thickness/2);
 
 				for(var i = -r-1; i < r+1; i++) {
 					var height = Math.sqrt(r * r - i * i);
 
-					for (var j = Math.floor(-height); j < Math.ceil(height); j++) {
-						if(Math.random() > 0.75)
+					for(var j = Math.floor(-height); j < Math.ceil(height); j++) {
+						if(Math.random() < this.options.chance)
 							Sketchfull.MaximumPixel(layer.data, x + i, y + j, Math.clamp(height - Math.abs(j), 0, 1) * 255);
 					}
 				}
 
 				Sketchfull.dirty = true;
-			},
-			Move(layer, x0, y0, x1, y1) {
-			},
-			End(layer, x, y) {
 			}
 		},
 		text: {
@@ -281,9 +290,7 @@ const Sketchfull = {
 				Sketchfull.layers.splice(Sketchfull.layer+1, 0, {type: "text", name: text, x: x, y: y, data: {color: Sketchfull.options.color, text: text}});
 				Sketchfull.layer += 1;
 				Sketchfull.dirty = true;
-			},
-			Move(layer, x0, y0, x1, y1) {},
-			End(layer, x, y) {}
+			}
 		},
 		line: {
 			options: {
@@ -326,18 +333,14 @@ const Sketchfull = {
 			Start(layer, x, y) {
 				Sketchfull.zoom = Math.clamp(Sketchfull.zoom + 0.2, 0.01, 1000);
 				Sketchfull.dirty = true;
-			},
-			Move(layer, x0, y0, x1, y1) {},
-			End(layer, x, y) {}
+			}
 		},
 		zoomout: {
 			toolbar: '<ul><li><span>Zoom</span></li></ul>',
 			Start(layer, x, y) {
 				Sketchfull.zoom = Math.clamp(Sketchfull.zoom - 0.2, 0.01, 1000);
 				Sketchfull.dirty = true;
-			},
-			Move(layer, x0, y0, x1, y1) {},
-			End(layer, x, y) {}
+			}
 		},
 
 		curve(layer, x0, y0, x1, y1, x2, y2) {
@@ -387,7 +390,7 @@ const Sketchfull = {
 			for(var i = -r-1; i < r+1; i++) {
 				var height = Math.sqrt(r * r - i * i);
 
-				for (var j = Math.floor(-height); j < Math.ceil(height); j++)
+				for(var j = Math.floor(-height); j < Math.ceil(height); j++)
 					this.pixel(layer, x + i, y + j, Math.clamp(height - Math.abs(j), 0, 1) * 255);
 			}
 		}
@@ -406,13 +409,8 @@ const Sketchfull = {
 	dirtyLayers: 1, // Number of layers
 	isMouseDown: false,
 
-	get currentLayer() {
-		return Sketchfull.layers[Sketchfull.layer];
-	},
-
-	get currentTool() {
-		return Sketchfull.tools[Sketchfull.tool];
-	},
+	get currentLayer() {return Sketchfull.layers[Sketchfull.layer];},
+	get currentTool() {return Sketchfull.tools[Sketchfull.tool];},
 
 	MinimumPixel(layer, x, y, alpha) {
 		if(x < 0 || y < 0 || x >= layer.width || y >= layer.height) return;
@@ -605,16 +603,19 @@ const Sketchfull = {
 			if("tool" in e.currentTarget.dataset && e.currentTarget.dataset.tool in Sketchfull.tools) {
 				Sketchfull.tool = e.currentTarget.dataset.tool;
 				$("#sketch-toolbar").html(Sketchfull.tools[Sketchfull.tool].toolbar);
+				if(Sketchfull.currentTool.Init) Sketchfull.currentTool.Init()
 			}
 		});
+
+		Sketchfull.tool = "pencil";
+		$("#sketch-toolbar").html(Sketchfull.tools[Sketchfull.tool].toolbar);
+		if(Sketchfull.currentTool.Init) Sketchfull.currentTool.Init()
 
 		// Layer reorder
 		var sortableStart;
 		$("#sketch-layers").sortable({
 			// containment: "parent",
-			start(event, ui) {
-				sortableStart = parseInt(ui.item[0].dataset.index);
-			},
+			start(event, ui) {sortableStart = parseInt(ui.item[0].dataset.index);},
 			stop(event, ui) {
 				var a = ui.item.prev()[0], b = ui.item.next()[0];
 
@@ -636,10 +637,6 @@ const Sketchfull = {
 			}
 		});
 
-		$("#sketch-thickness").on("change", e => {
-			Sketchfull.options.width = e.target.value
-		});
-
 		window.addEventListener("wheel", e => {
 			if(e.ctrlKey) { // Zoom
 				e.preventDefault();
@@ -657,33 +654,36 @@ const Sketchfull = {
 
 		Sketchfull.canvas.addEventListener("mousedown", e => {
 			Sketchfull.isMouseDown = true;
-			Sketchfull.tools[Sketchfull.tool].Start(
-				Sketchfull.currentLayer,
-				(e.pageX - Sketchfull.canvas.offsetLeft) / Sketchfull.canvas.offsetWidth * Sketchfull.canvas.width,
-				(e.pageY - Sketchfull.canvas.offsetTop + Sketchfull.canvas.offsetHeight/2) / Sketchfull.canvas.offsetHeight * Sketchfull.canvas.height
-			);
+			if(Sketchfull.currentTool.Start)
+				Sketchfull.currentTool.Start(
+					Sketchfull.currentLayer,
+					(e.pageX - Sketchfull.canvas.offsetLeft) / Sketchfull.canvas.offsetWidth * Sketchfull.canvas.width,
+					(e.pageY - Sketchfull.canvas.offsetTop + Sketchfull.canvas.offsetHeight/2) / Sketchfull.canvas.offsetHeight * Sketchfull.canvas.height
+				);
 		});
 
 		Sketchfull.canvas.addEventListener("touchstart", e => {
 			for(var i = 0; i < e.changedTouches.length; i++) {
 				Sketchfull.touches[e.changedTouches[i].identifier] = e.changedTouches[i];
-				Sketchfull.tools[Sketchfull.tool].Start(
-					Sketchfull.currentLayer,
-					(e.changedTouches[i].pageX - e.changedTouches[i].target.offsetLeft) / e.changedTouches[i].target.offsetWidth * Sketchfull.canvas.width,
-					(e.changedTouches[i].pageY - e.changedTouches[i].target.offsetTop + e.changedTouches[i].target.offsetHeight/2) / e.changedTouches[i].target.offsetHeight * Sketchfull.canvas.height
-				);
+				if(Sketchfull.currentTool.Start)
+					Sketchfull.currentTool.Start(
+						Sketchfull.currentLayer,
+						(e.changedTouches[i].pageX - e.changedTouches[i].target.offsetLeft) / e.changedTouches[i].target.offsetWidth * Sketchfull.canvas.width,
+						(e.changedTouches[i].pageY - e.changedTouches[i].target.offsetTop + e.changedTouches[i].target.offsetHeight/2) / e.changedTouches[i].target.offsetHeight * Sketchfull.canvas.height
+					);
 			}
 		});
 
 		window.addEventListener("mousemove", e => {
 			if(Sketchfull.isMouseDown) {
-				Sketchfull.tools[Sketchfull.tool].Move(
-					Sketchfull.currentLayer,
-					((e.pageX - Sketchfull.canvas.offsetLeft) - e.movementX) / Sketchfull.canvas.offsetWidth * Sketchfull.canvas.width,
-					((e.pageY - Sketchfull.canvas.offsetTop + Sketchfull.canvas.offsetHeight/2) - e.movementY) / Sketchfull.canvas.offsetHeight * Sketchfull.canvas.height,
-					(e.pageX - Sketchfull.canvas.offsetLeft) / Sketchfull.canvas.offsetWidth * Sketchfull.canvas.width,
-					(e.pageY - Sketchfull.canvas.offsetTop + Sketchfull.canvas.offsetHeight/2) / Sketchfull.canvas.offsetHeight * Sketchfull.canvas.height
-				);
+				if(Sketchfull.currentTool.Move)
+					Sketchfull.currentTool.Move(
+						Sketchfull.currentLayer,
+						((e.pageX - Sketchfull.canvas.offsetLeft) - e.movementX) / Sketchfull.canvas.offsetWidth * Sketchfull.canvas.width,
+						((e.pageY - Sketchfull.canvas.offsetTop + Sketchfull.canvas.offsetHeight/2) - e.movementY) / Sketchfull.canvas.offsetHeight * Sketchfull.canvas.height,
+						(e.pageX - Sketchfull.canvas.offsetLeft) / Sketchfull.canvas.offsetWidth * Sketchfull.canvas.width,
+						(e.pageY - Sketchfull.canvas.offsetTop + Sketchfull.canvas.offsetHeight/2) / Sketchfull.canvas.offsetHeight * Sketchfull.canvas.height
+					);
 			}
 		});
 
@@ -691,33 +691,36 @@ const Sketchfull = {
 		Sketchfull.canvas.addEventListener("touchmove", e => {
 			e.preventDefault();
 			for(var i = 0; i < e.changedTouches.length; i++) {
-				Sketchfull.tools[Sketchfull.tool].Move(
-					Sketchfull.currentLayer,
-					(Sketchfull.touches[e.changedTouches[i].identifier].pageX - Sketchfull.touches[e.changedTouches[i].identifier].target.offsetLeft) / Sketchfull.touches[e.changedTouches[i].identifier].target.offsetWidth * Sketchfull.canvas.width,
-					(Sketchfull.touches[e.changedTouches[i].identifier].pageY - Sketchfull.touches[e.changedTouches[i].identifier].target.offsetTop + Sketchfull.touches[e.changedTouches[i].identifier].target.offsetHeight/2) / Sketchfull.touches[e.changedTouches[i].identifier].target.offsetHeight * Sketchfull.canvas.height,
-					(e.changedTouches[i].pageX - e.changedTouches[i].target.offsetLeft) / e.changedTouches[i].target.offsetWidth * Sketchfull.canvas.width,
-					(e.changedTouches[i].pageY - e.changedTouches[i].target.offsetTop + e.changedTouches[i].target.offsetHeight/2) / e.changedTouches[i].target.offsetHeight * Sketchfull.canvas.height
-				);
+				if(Sketchfull.currentTool.Move)
+					Sketchfull.currentTool.Move(
+						Sketchfull.currentLayer,
+						(Sketchfull.touches[e.changedTouches[i].identifier].pageX - Sketchfull.touches[e.changedTouches[i].identifier].target.offsetLeft) / Sketchfull.touches[e.changedTouches[i].identifier].target.offsetWidth * Sketchfull.canvas.width,
+						(Sketchfull.touches[e.changedTouches[i].identifier].pageY - Sketchfull.touches[e.changedTouches[i].identifier].target.offsetTop + Sketchfull.touches[e.changedTouches[i].identifier].target.offsetHeight/2) / Sketchfull.touches[e.changedTouches[i].identifier].target.offsetHeight * Sketchfull.canvas.height,
+						(e.changedTouches[i].pageX - e.changedTouches[i].target.offsetLeft) / e.changedTouches[i].target.offsetWidth * Sketchfull.canvas.width,
+						(e.changedTouches[i].pageY - e.changedTouches[i].target.offsetTop + e.changedTouches[i].target.offsetHeight/2) / e.changedTouches[i].target.offsetHeight * Sketchfull.canvas.height
+					);
 				Sketchfull.touches[e.changedTouches[i].identifier] = e.changedTouches[i];
 			}
 		});
 
 		Sketchfull.canvas.addEventListener("mouseup", e => {
 			Sketchfull.isMouseDown = false;
-			Sketchfull.tools[Sketchfull.tool].End(
-				Sketchfull.currentLayer,
-				(e.pageX - Sketchfull.canvas.offsetLeft) / Sketchfull.canvas.offsetWidth * Sketchfull.canvas.width,
-				(e.pageY - Sketchfull.canvas.offsetTop + Sketchfull.canvas.offsetHeight/2) / Sketchfull.canvas.offsetHeight * Sketchfull.canvas.height
-			);
+			if(Sketchfull.currentTool.End)
+				Sketchfull.currentTool.End(
+					Sketchfull.currentLayer,
+					(e.pageX - Sketchfull.canvas.offsetLeft) / Sketchfull.canvas.offsetWidth * Sketchfull.canvas.width,
+					(e.pageY - Sketchfull.canvas.offsetTop + Sketchfull.canvas.offsetHeight/2) / Sketchfull.canvas.offsetHeight * Sketchfull.canvas.height
+				);
 		});
 
 		Sketchfull.canvas.addEventListener("touchend", e => {
 			for(var i = 0; i < e.changedTouches.length; i++) {
-				Sketchfull.tools[Sketchfull.tool].End(
-					Sketchfull.currentLayer,
-					(e.changedTouches[i].pageX - e.changedTouches[i].target.offsetLeft) / e.changedTouches[i].target.offsetWidth * Sketchfull.canvas.width,
-					(e.changedTouches[i].pageY - e.changedTouches[i].target.offsetTop + e.changedTouches[i].target.offsetHeight/2) / e.changedTouches[i].target.offsetHeight * Sketchfull.canvas.height
-				);
+				if(Sketchfull.currentTool.End)
+					Sketchfull.currentTool.End(
+						Sketchfull.currentLayer,
+						(e.changedTouches[i].pageX - e.changedTouches[i].target.offsetLeft) / e.changedTouches[i].target.offsetWidth * Sketchfull.canvas.width,
+						(e.changedTouches[i].pageY - e.changedTouches[i].target.offsetTop + e.changedTouches[i].target.offsetHeight/2) / e.changedTouches[i].target.offsetHeight * Sketchfull.canvas.height
+					);
 				delete Sketchfull.touches[e.changedTouches[i].identifier];
 			}
 		});
@@ -751,10 +754,10 @@ const Sketchfull = {
 	Invert() {
 		switch(Sketchfull.currentLayer.type) {
 			case "bitmap":
-				for(var i = 0; i < Sketchfull.currentLayer.data.length; i += 4) {
-					Sketchfull.currentLayer.data[i + 0] = 255 - Sketchfull.currentLayer.data[i + 0];
-					Sketchfull.currentLayer.data[i + 1] = 255 - Sketchfull.currentLayer.data[i + 1];
-					Sketchfull.currentLayer.data[i + 2] = 255 - Sketchfull.currentLayer.data[i + 2];
+				for(var i = 0; i < Sketchfull.currentLayer.data.data.length; i += 4) {
+					Sketchfull.currentLayer.data.data[i + 0] = 255 - Sketchfull.currentLayer.data.data[i + 0];
+					Sketchfull.currentLayer.data.data[i + 1] = 255 - Sketchfull.currentLayer.data.data[i + 1];
+					Sketchfull.currentLayer.data.data[i + 2] = 255 - Sketchfull.currentLayer.data.data[i + 2];
 				};
 				break;
 			case "text":
@@ -762,6 +765,27 @@ const Sketchfull = {
 			case "rectangle":
 			case "circle":
 				Sketchfull.currentLayer.data.color = {r: 255 - Sketchfull.currentLayer.data.color.r, g: 255 - Sketchfull.currentLayer.data.color.g, b: 255 - Sketchfull.currentLayer.data.color.b};
+				break;
+			default:
+				console.warn("Cannot invert the current layer")
+		}
+		Sketchfull.dirty = true;
+	},
+
+	Grayscale() {
+		switch(Sketchfull.currentLayer.type) {
+			case "bitmap":
+				for(var i = 0; i < Sketchfull.currentLayer.data.data.length; i += 4) {
+					var luma =  0.2126 * Sketchfull.currentLayer.data.data[i + 0] + 0.7152 * Sketchfull.currentLayer.data.data[i + 1] + 0.0722 * Sketchfull.currentLayer.data.data[i + 2];
+					Sketchfull.currentLayer.data.data[i + 0] = Sketchfull.currentLayer.data.data[i + 1] = Sketchfull.currentLayer.data.data[i + 2] = luma;
+				};
+				break;
+			case "text":
+			case "line":
+			case "rectangle":
+			case "circle":
+				var luma =  0.2126 * Sketchfull.currentLayer.data.color.r + 0.7152 * Sketchfull.currentLayer.data.color.g + 0.0722 * Sketchfull.currentLayer.data.color.b;
+				Sketchfull.currentLayer.data.color = {r: luma, g: luma, b: luma};
 				break;
 			default:
 				console.warn("Cannot invert the current layer")

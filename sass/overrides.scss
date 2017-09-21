@@ -41,6 +41,10 @@ nav {
 	flex: none;
 }
 
+nav ul > li > span.range-field {
+	padding: 0;
+}
+
 .xscroll {
 	overflow-x: scroll;
 	overflow-y: hidden;

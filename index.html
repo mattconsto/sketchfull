@@ -83,6 +83,7 @@
 		<li><a href="#!" disabled>Flip/Rotate</a></li>
 		<li><a href="#!" disabled>Stretch/Skew</a></li>
 		<li><a onclick="Sketchfull.Invert()">Invert Colors</a></li>
+		<li><a onclick="Sketchfull.Grayscale()">Grayscale</a></li>
 		<li><a onclick="Sketchfull.BackgroundColor(prompt('Set Background Color'))">Set Background Color</a></li>
 		<li><a onclick="Sketchfull.Clear()">Clear Canvas</a></li>
 	</ul>
@@ -108,8 +109,7 @@
 	<nav class="red lighten-2">
 		<div id="sketch-toolbar" class="nav-wrapper hide">
 			<ul>
-				<li><span>Line Thickness</span></li>
-				<li><span class="range-field"><input type="range" id="sketch-thickness" min="1" max="250" value="5" /></span></li>
+				<li><span>Select a tool to begin</span></li>
 			</ul>
 		</div>
 	</nav>
