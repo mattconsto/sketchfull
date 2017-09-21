@@ -50,7 +50,7 @@ nav {
 	overflow: auto;
 }
 
-#sketch-container canvas {
+canvas {
 	margin: 0 auto;
 	position: relative;
 	top: 50%;
@@ -81,7 +81,8 @@ nav {
 	text-align: center;
 	display: inline-block;
 	margin: 0;
-	overflow: hidden;
+	overflow-x: hidden;
+	overflow-y: scroll;
 	z-index: 25;
 }
 

@@ -21,11 +21,25 @@
 	</script>
 
 	<script id="sfui-layer-panel" type="text/ractive">
-		<ul id="sketch-layers">
-		{{#each layers: index}}
-			<li data-index="{{index}}" {{#if (layer == index)}}class="red-text"{{/if}}>{{name}} ({{type}}) - <a onclick="Sketchfull.SelectLayer({{index}})">Select</a> <a onclick="Sketchfull.NameLayer({{index}}, prompt('Please Enter a name', '{{name}}'))">Name</a> <a onclick="Sketchfull.DeleteLayer({{index}})">Delete</a></li>
-		{{/each}}
-		</ul>
+		<div id="sketch-layers">
+			{{#each layers: index}}
+			<div data-index="{{index}}" class="card horizontal {{#if (layer == index)}}selected{{/if}}" {{#if (layer == index)}}style="background: red;"{{/if}}>
+				<div class="card-image">
+					<canvas data-index="{{index}}" width="50" height="50">Preview</canvas>
+				</div>
+				<div class="card-stacked">
+					<div class="card-content">
+						<p>{{name}} ({{type}})</p>
+					</div>
+					<div class="card-action">
+						<a onclick="Sketchfull.SelectLayer({{index}})">Select</a> 
+						<a onclick="Sketchfull.NameLayer({{index}}, prompt('Please Enter a name', '{{name}}'))">Name</a> 
+						<a onclick="Sketchfull.DeleteLayer({{index}})">Delete</a>
+					</div>
+				</div>
+			</div>
+			{{/each}}
+		</div>
 
 		<p><a onclick="Sketchfull.NewLayer()">New Layer</a></p>
 	</script>
@@ -69,6 +83,7 @@
 		<li><a href="#!" disabled>Flip/Rotate</a></li>
 		<li><a href="#!" disabled>Stretch/Skew</a></li>
 		<li><a onclick="Sketchfull.Invert()">Invert Colors</a></li>
+		<li><a onclick="Sketchfull.BackgroundColor(prompt('Set Background Color'))">Set Background Color</a></li>
 		<li><a onclick="Sketchfull.Clear()">Clear Canvas</a></li>
 	</ul>
 
