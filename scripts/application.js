@@ -17,6 +17,16 @@ const Sketchfull = {
 		redo: {
 
 		},
+		move: {
+			toolbar: '<ul><li><span>Move</span></li></ul>',
+			Start(layer, x, y) {},
+			Move(layer, x0, y0, x1, y1) {
+				layer.x += x1 - x0;
+				layer.y += y1 - y0;
+				Sketchfull.dirty = true;
+			},
+			End(layer, x, y) {}
+		},
 		select: {
 			options: {
 			},
@@ -37,12 +47,14 @@ const Sketchfull = {
 			Start(layer, x, y) {
 				switch(layer.type) {
 					case "bitmap":
-						$(".colpick").colpickSetColor(Sketchfull.GetPixel(layer, Math.round(x), Math.round(y)));
+						$(".colpick").colpickSetColor(Sketchfull.GetPixel(layer.data, Math.round(x), Math.round(y)));
+						break;
 					case "text":
 					case "line":
 					case "rectangle":
 					case "circle":
 						$(".colpick").colpickSetColor(layer.data.color);
+						break;
 					default:
 						console.warn("Cannot pick color");
 				}
@@ -146,7 +158,6 @@ const Sketchfull = {
 				circle(layer.data, x0, y0, r);
 
 				while(true) {
-
 					for (var x = -r-1; x < r+1; x++)
 						Sketchfull.MaximumPixel(layer.data, x0 + x, y0, Math.clamp(r + 0.5 - Math.abs(x), 0, 1) * 255);
 					for (var y = -r-1; y < r+1; y++)
@@ -183,12 +194,13 @@ const Sketchfull = {
 			toolbar: '<ul><li><span>Fill</span></li></ul>',
 			Start(layer, x, y) { // These are floats
 				if(layer.type != "bitmap") return;
+				var bitmap = layer.data;
 
 				x = Math.round(x);
 				y = Math.round(y);
 
 				var threshold = 0;
-				var targetColor = Sketchfull.GetPixel(layer, x, y);
+				var targetColor = Sketchfull.GetPixel(bitmap, x, y);
 				var replacementColor = Sketchfull.options.color;
 				var difference = (a, b, threshold) => Math.abs(a.r - b.r) + Math.abs(a.g - b.g) + Math.abs(a.b - b.b) <= threshold;
 
@@ -200,19 +212,19 @@ const Sketchfull = {
 					var pos = queue.pop();
 					var west = east = pos[0];
 
-					while(west >= 0 && difference(Sketchfull.GetPixel(layer, --west, pos[1]), targetColor, threshold)) {}
-					while(east < layer.width && difference(Sketchfull.GetPixel(layer, ++east, pos[1]), targetColor, threshold)) {}
+					while(west >= 0 && difference(Sketchfull.GetPixel(bitmap, --west, pos[1]), targetColor, threshold)) {}
+					while(east < bitmap.width && difference(Sketchfull.GetPixel(bitmap, ++east, pos[1]), targetColor, threshold)) {}
 
 					for(var i = pos[0]; i > west; i--) {
-						Sketchfull.MaximumPixel(layer, i, pos[1], 255);
-						if(difference(Sketchfull.GetPixel(layer, i, pos[1] - 1), targetColor, threshold)) queue.push([i, pos[1] - 1]);
-						if(difference(Sketchfull.GetPixel(layer, i, pos[1] + 1), targetColor, threshold)) queue.push([i, pos[1] + 1]);
+						Sketchfull.MaximumPixel(bitmap, i, pos[1], 255);
+						if(difference(Sketchfull.GetPixel(bitmap, i, pos[1] - 1), targetColor, threshold)) queue.push([i, pos[1] - 1]);
+						if(difference(Sketchfull.GetPixel(bitmap, i, pos[1] + 1), targetColor, threshold)) queue.push([i, pos[1] + 1]);
 					}
 
 					for(var i = pos[0]; i < east; i++) {
-						Sketchfull.MaximumPixel(layer, i, pos[1], 255);
-						if(difference(Sketchfull.GetPixel(layer, i, pos[1] - 1), targetColor, threshold)) queue.push([i, pos[1] - 1]);
-						if(difference(Sketchfull.GetPixel(layer, i, pos[1] + 1), targetColor, threshold)) queue.push([i, pos[1] + 1]);
+						Sketchfull.MaximumPixel(bitmap, i, pos[1], 255);
+						if(difference(Sketchfull.GetPixel(bitmap, i, pos[1] - 1), targetColor, threshold)) queue.push([i, pos[1] - 1]);
+						if(difference(Sketchfull.GetPixel(bitmap, i, pos[1] + 1), targetColor, threshold)) queue.push([i, pos[1] + 1]);
 					}
 				}
 
@@ -236,15 +248,26 @@ const Sketchfull = {
 			}
 		},
 		spray: {
-			options: {
-			},
 			toolbar: '<ul><li><span>Spray</span></li></ul>',
-			Start(x, y) {
-				console.log(x, y);
+			Start(layer, x, y) {
+				if(layer.type != "bitmap") return;
+
+				r = Math.round(Sketchfull.options.width/2);
+
+				for(var i = -r-1; i < r+1; i++) {
+					var height = Math.sqrt(r * r - i * i);
+
+					for (var j = Math.floor(-height); j < Math.ceil(height); j++) {
+						if(Math.random() > 0.75)
+							Sketchfull.MaximumPixel(layer.data, x + i, y + j, Math.clamp(height - Math.abs(j), 0, 1) * 255);
+					}
+				}
+
+				Sketchfull.dirty = true;
 			},
-			Move(x, y, dx, dy) {
+			Move(layer, x0, y0, x1, y1) {
 			},
-			End(x, y) {
+			End(layer, x, y) {
 			}
 		},
 		text: {
@@ -391,31 +414,32 @@ const Sketchfull = {
 		return Sketchfull.tools[Sketchfull.tool];
 	},
 
-	MinimumPixel(bitmap, x, y, alpha) {
-		if(x < 0 || y < 0 || x >= bitmap.width || y >= bitmap.height) return;
+	MinimumPixel(layer, x, y, alpha) {
+		if(x < 0 || y < 0 || x >= layer.width || y >= layer.height) return;
 
-		// console.log(bitmap, x, y, alpha);
-		bitmap.data[y * (bitmap.width * 4) + x * 4 + 0] = (Sketchfull.options.color.r) & 0xff;
-		bitmap.data[y * (bitmap.width * 4) + x * 4 + 1] = (Sketchfull.options.color.g) & 0xff;
-		bitmap.data[y * (bitmap.width * 4) + x * 4 + 2] = (Sketchfull.options.color.b) & 0xff;
-		bitmap.data[y * (bitmap.width * 4) + x * 4 + 3] = Math.min(bitmap.data[y * (bitmap.width * 4) + x * 4 + 3], alpha & 0xff);
+		// console.log(layer, x, y, alpha);
+		layer.data[y * (layer.width * 4) + x * 4 + 0] = (Sketchfull.options.color.r) & 0xff;
+		layer.data[y * (layer.width * 4) + x * 4 + 1] = (Sketchfull.options.color.g) & 0xff;
+		layer.data[y * (layer.width * 4) + x * 4 + 2] = (Sketchfull.options.color.b) & 0xff;
+		layer.data[y * (layer.width * 4) + x * 4 + 3] = Math.min(layer.data[y * (layer.width * 4) + x * 4 + 3], alpha & 0xff);
 	},
 
-	MaximumPixel(bitmap, x, y, alpha) {
-		if(x < 0 || y < 0 || x >= bitmap.width || y >= bitmap.height) return;
+	MaximumPixel(layer, x, y, alpha) {
+		if(x < 0 || y < 0 || x >= layer.width || y >= layer.height) return;
 
-		// console.log(bitmap, x, y, alpha);
-		bitmap.data[y * (bitmap.width * 4) + x * 4 + 0] = (Sketchfull.options.color.r) & 0xff;
-		bitmap.data[y * (bitmap.width * 4) + x * 4 + 1] = (Sketchfull.options.color.g) & 0xff;
-		bitmap.data[y * (bitmap.width * 4) + x * 4 + 2] = (Sketchfull.options.color.b) & 0xff;
-		bitmap.data[y * (bitmap.width * 4) + x * 4 + 3] = Math.max(bitmap.data[y * (bitmap.width * 4) + x * 4 + 3], alpha & 0xff);
+		// console.log(layer, x, y, alpha);
+		layer.data[y * (layer.width * 4) + x * 4 + 0] = (Sketchfull.options.color.r) & 0xff;
+		layer.data[y * (layer.width * 4) + x * 4 + 1] = (Sketchfull.options.color.g) & 0xff;
+		layer.data[y * (layer.width * 4) + x * 4 + 2] = (Sketchfull.options.color.b) & 0xff;
+		layer.data[y * (layer.width * 4) + x * 4 + 3] = Math.max(layer.data[y * (layer.width * 4) + x * 4 + 3], alpha & 0xff);
 	},
 
 	GetPixel(bitmap, x, y) {
+		var offset = y * (bitmap.width * 4) + x * 4;
 		return {
-			r: bitmap.data[y * (bitmap.width * 4) + x * 4 + 0],
-			g: bitmap.data[y * (bitmap.width * 4) + x * 4 + 1],
-			b: bitmap.data[y * (bitmap.width * 4) + x * 4 + 2]
+			r: bitmap.data[offset + 0],
+			g: bitmap.data[offset + 1],
+			b: bitmap.data[offset + 2]
 		};
 	},
 
@@ -425,95 +449,123 @@ const Sketchfull = {
 	},
 
 	Update(timestamp) {
-		var CompositeBitmapLayer = function(context, layer) {
-			var imagedata = context.getImageData(0, 0, context.canvas.width, context.canvas.height);
-			var composite = imagedata.data, layerdata = layer.data.data || layer.data;
+		try {
+			var CompositeBitmapLayer = function(context, layer) {
+				var imagedata = context.getImageData(layer.x, layer.y, context.canvas.width, context.canvas.height);
+				var composite = imagedata.data, layerdata = layer.data.data || layer.data;
 
-			for(var j = 0; j < composite.length; j += 4) {
-				composite[j + 0] = Math.round(Math.lerp(composite[j + 0], layerdata[j + 0], layerdata[j + 3] / 255));
-				composite[j + 1] = Math.round(Math.lerp(composite[j + 1], layerdata[j + 1], layerdata[j + 3] / 255));
-				composite[j + 2] = Math.round(Math.lerp(composite[j + 2], layerdata[j + 2], layerdata[j + 3] / 255));
-				composite[j + 3] = Math.min(255, composite[j + 3] + layerdata[j + 3]);
+				for(var j = 0; j < composite.length; j += 4) {
+					composite[j + 0] = Math.round(Math.lerp(composite[j + 0], layerdata[j + 0], layerdata[j + 3] / 255));
+					composite[j + 1] = Math.round(Math.lerp(composite[j + 1], layerdata[j + 1], layerdata[j + 3] / 255));
+					composite[j + 2] = Math.round(Math.lerp(composite[j + 2], layerdata[j + 2], layerdata[j + 3] / 255));
+					composite[j + 3] = Math.min(255, composite[j + 3] + layerdata[j + 3]);
+				}
+
+				context.putImageData(imagedata, layer.x, layer.y);
 			}
 
-			context.putImageData(imagedata, 0, 0);
-		}
+			var CompositeTextLayer = function(context, layer) {
+				context.font = "20px Arial";
+				context.fillStyle = "rgb(" + layer.data.color.r + ", " + layer.data.color.g + ", " + layer.data.color.b + ")";
+				context.fillText(layer.data.text, layer.x, layer.y);
+			}
 
-		var CompositeTextLayer = function(context, layer) {
-			context.font = "20px Arial";
-			context.fillStyle = "rgb(" + layer.data.color.r + ", " + layer.data.color.g + ", " + layer.data.color.b + ")";
-			context.fillText(layer.data.text, layer.x, layer.y);
-		}
+			if(Sketchfull.dirty) {
+				Sketchfull.canvas.style.left   = Sketchfull.transform.x + "%";
+				Sketchfull.canvas.style.top    = Sketchfull.transform.y + "%";
+				Sketchfull.canvas.style.width  = Sketchfull.zoom * Sketchfull.currentLayer.data.width  + "px";
+				Sketchfull.canvas.style.height = Sketchfull.zoom * Sketchfull.currentLayer.data.height + "px";
 
-		if(Sketchfull.dirty) {
-			Sketchfull.canvas.style.left   = Sketchfull.transform.x + "%";
-			Sketchfull.canvas.style.top    = Sketchfull.transform.y + "%";
-			Sketchfull.canvas.style.width  = Sketchfull.zoom * Sketchfull.currentLayer.data.width  + "px";
-			Sketchfull.canvas.style.height = Sketchfull.zoom * Sketchfull.currentLayer.data.height + "px";
+				Sketchfull.ractive.set("layers", Sketchfull.layers);
+				Sketchfull.ractive.set("layer", Sketchfull.layer);
 
-			Sketchfull.ractive.set("layers", Sketchfull.layers);
-			Sketchfull.ractive.set("layer", Sketchfull.layer);
+				// Only re-composite layers if necessary.
+				if(Sketchfull.dirtyLayers != Sketchfull.layers.length || Sketchfull.dirtyLayer != Sketchfull.layer) {
+					// Update variables.
+					Sketchfull.dirtyLayers = Sketchfull.layers.length;
+					Sketchfull.dirtyLayer = Sketchfull.layer;
 
-			// Only re-composite layers if necessary.
-			if(Sketchfull.dirtyLayers != Sketchfull.layers.length || Sketchfull.dirtyLayer != Sketchfull.layer) {
-				// Update variables.
-				Sketchfull.dirtyLayers = Sketchfull.layers.length;
-				Sketchfull.dirtyLayer = Sketchfull.layer;
+					// Clear Canvas
+					Sketchfull.backcanvas.context.clearRect(0, 0, Sketchfull.backcanvas.width, Sketchfull.backcanvas.height);
+					Sketchfull.forecanvas.context.clearRect(0, 0, Sketchfull.forecanvas.width, Sketchfull.forecanvas.height);
 
-				Sketchfull.backcanvas.context.fillStyle = Sketchfull.background;
-				Sketchfull.backcanvas.context.fillRect(0, 0, Sketchfull.backcanvas.width, Sketchfull.backcanvas.height);
+					// Fill background
+					Sketchfull.backcanvas.context.fillStyle = Sketchfull.background;
+					Sketchfull.backcanvas.context.fillRect(0, 0, Sketchfull.backcanvas.width, Sketchfull.backcanvas.height);
 
-				for(var i = 0; i < Sketchfull.layer; i++) {
-					switch(Sketchfull.layers[i].type) {
-						case "bitmap": CompositeBitmapLayer(Sketchfull.backcanvas.context, Sketchfull.layers[i]); break;
-						case "text": CompositeBitmapLayer(Sketchfull.backcanvas.context, Sketchfull.layers[i]); break;
-						default: console.warn("Cannot draw layer");
+					for(var i = 0; i < Sketchfull.layer; i++) {
+						Sketchfull.layercanvas.context.clearRect(0, 0, Sketchfull.layercanvas.width, Sketchfull.layercanvas.height);
+						switch(Sketchfull.layers[i].type) {
+							case "bitmap": CompositeBitmapLayer(Sketchfull.layercanvas.context, Sketchfull.layers[i]); break;
+							case "text": CompositeTextLayer(Sketchfull.layercanvas.context, Sketchfull.layers[i]); break;
+							default: console.warn("Cannot draw layer");
+						}
+						Sketchfull.backcanvas.context.drawImage(Sketchfull.layercanvas, 0, 0);
+
+						// Thumbnail
+						var thumbcanvas = $("#sketch-layers > div[data-index='" + i + "'] canvas")[0];
+						if(thumbcanvas) {
+							thumbcanvas.context = thumbcanvas.getContext("2d");
+							thumbcanvas.context.clearRect(0, 0, thumbcanvas.width, thumbcanvas.height);
+							thumbcanvas.context.drawImage(Sketchfull.layercanvas, 0, 0, thumbcanvas.width, thumbcanvas.height);
+						}
+					}
+
+					for(var i = Sketchfull.layer + 1; i < Sketchfull.layers.length; i++) {
+						Sketchfull.layercanvas.context.clearRect(0, 0, Sketchfull.layercanvas.width, Sketchfull.layercanvas.height);
+						switch(Sketchfull.layers[i].type) {
+							case "bitmap": CompositeBitmapLayer(Sketchfull.layercanvas.context, Sketchfull.layers[i]); break;
+							case "text": CompositeTextLayer(Sketchfull.layercanvas.context, Sketchfull.layers[i]); break;
+							default: console.warn("Cannot draw layer");
+						}
+						Sketchfull.forecanvas.context.drawImage(Sketchfull.layercanvas, 0, 0);
+
+						// Thumbnail
+						var thumbcanvas = $("#sketch-layers > div[data-index='" + i + "'] canvas")[0];
+						if(thumbcanvas) {
+							thumbcanvas.context = thumbcanvas.getContext("2d");
+							thumbcanvas.context.clearRect(0, 0, thumbcanvas.width, thumbcanvas.height);
+							thumbcanvas.context.drawImage(Sketchfull.layercanvas, 0, 0, thumbcanvas.width, thumbcanvas.height);
+						}
 					}
 				}
 
-				for(var i = Sketchfull.layer + 1; i < Sketchfull.layers.length; i++) {
-					switch(Sketchfull.layers[i].type) {
-						case "bitmap": CompositeBitmapLayer(Sketchfull.forecanvas.context, Sketchfull.layers[i]); break;
-						case "text": CompositeBitmapLayer(Sketchfull.forecanvas.context, Sketchfull.layers[i]); break;
-						default: console.warn("Cannot draw layer");
-					}
+				// Draw layers
+				Sketchfull.canvas.context.clearRect(0, 0, Sketchfull.canvas.width, Sketchfull.canvas.height);
+
+				// Merge
+				if(Sketchfull.layer > 0) {
+					CompositeBitmapLayer(Sketchfull.canvas.context, Sketchfull.backcanvas.context.getImageData(0, 0, Sketchfull.backcanvas.width, Sketchfull.backcanvas.height));
 				}
+
+				// Draw current layer
+				Sketchfull.layercanvas.context.clearRect(0, 0, Sketchfull.layercanvas.width, Sketchfull.layercanvas.height);
+				switch(Sketchfull.layers[Sketchfull.layer].type) {
+					case "bitmap": CompositeBitmapLayer(Sketchfull.layercanvas.context, Sketchfull.layers[Sketchfull.layer]); break;
+					case "text": CompositeTextLayer(Sketchfull.layercanvas.context, Sketchfull.layers[Sketchfull.layer]); break;
+					default: console.warn("Cannot draw layer");
+				}
+				Sketchfull.canvas.context.drawImage(Sketchfull.layercanvas, 0, 0);
+
+				// Thumbnail
+				var thumbcanvas = $("#sketch-layers > div[data-index='" + Sketchfull.layer + "'] canvas")[0];
+				if(thumbcanvas) {
+					thumbcanvas.context = thumbcanvas.getContext("2d");
+					thumbcanvas.context.clearRect(0, 0, thumbcanvas.width, thumbcanvas.height);
+					thumbcanvas.context.drawImage(Sketchfull.layercanvas, 0, 0, thumbcanvas.width, thumbcanvas.height);
+				}
+
+				// Foreground
+				if(Sketchfull.layer < Sketchfull.layers.length - 1) {
+					CompositeBitmapLayer(Sketchfull.canvas.context, Sketchfull.forecanvas.context.getImageData(0, 0, Sketchfull.forecanvas.width, Sketchfull.forecanvas.height));
+				}
+
+				Sketchfull.dirty = false;
 			}
-
-			// Draw layers
-			Sketchfull.canvas.context.clearRect(0, 0, Sketchfull.canvas.width, Sketchfull.canvas.height);
-
-			// Merge
-			if(Sketchfull.layer > 0) {
-				CompositeBitmapLayer(Sketchfull.canvas.context, Sketchfull.backcanvas.context.getImageData(0, 0, Sketchfull.backcanvas.width, Sketchfull.backcanvas.height));
-			}
-
-			// Draw current layer
-			Sketchfull.layercanvas.context.clearRect(0, 0, Sketchfull.layercanvas.width, Sketchfull.layercanvas.height);
-			switch(Sketchfull.layers[Sketchfull.layer].type) {
-				case "bitmap": CompositeBitmapLayer(Sketchfull.layercanvas.context, Sketchfull.layers[Sketchfull.layer]); break;
-				case "text": CompositeBitmapLayer(Sketchfull.layercanvas.context, Sketchfull.layers[Sketchfull.layer]); break;
-				default: console.warn("Cannot draw layer");
-			}
-			Sketchfull.canvas.context.drawImage(Sketchfull.layercanvas, 0, 0);
-
-			// Thumbnail
-			var thumbcanvas = $("#sketch-layers > div[data-index='" + Sketchfull.layer + "'] canvas")[0];
-			if(thumbcanvas) {
-				thumbcanvas.context = thumbcanvas.getContext("2d");
-				thumbcanvas.context.clearRect(0, 0, thumbcanvas.width, thumbcanvas.height);
-				thumbcanvas.context.drawImage(Sketchfull.layercanvas, 0, 0, thumbcanvas.width, thumbcanvas.height);
-			}
-
-			// Foreground
-			if(Sketchfull.layer < Sketchfull.layers.length - 1) {
-				CompositeBitmapLayer(Sketchfull.canvas.context, Sketchfull.forecanvas.context.getImageData(0, 0, Sketchfull.forecanvas.width, Sketchfull.forecanvas.height));
-			}
-
-			Sketchfull.dirty = false;
 		}
-
-		window.requestAnimationFrame(Sketchfull.Update);
+		finally {
+			window.requestAnimationFrame(Sketchfull.Update);
+		}
 	},
 
 	Init() {
@@ -561,17 +613,23 @@ const Sketchfull = {
 		$("#sketch-layers").sortable({
 			// containment: "parent",
 			start(event, ui) {
-				sortableStart = ui.item[0].dataset.index;
+				sortableStart = parseInt(ui.item[0].dataset.index);
 			},
 			stop(event, ui) {
 				var a = ui.item.prev()[0], b = ui.item.next()[0];
+
+				// Cannot re-arrange a list of 1.
 				if(a === undefined && b === undefined) return false;
 
-				var position = b !== undefined ? (b.dataset.index > sortableStart ? b.dataset.index - 1 : b.dataset.index) : a.dataset.index + 1;
+				var position = b !== undefined ? 
+					(parseInt(b.dataset.index) > sortableStart ? parseInt(b.dataset.index) - 1 : parseInt(b.dataset.index)) :
+					(parseInt(a.dataset.index) > sortableStart ? parseInt(a.dataset.index) : parseInt(a.dataset.index) + 1);
+
 				var layer = Sketchfull.layers.splice(sortableStart, 1)[0];
 				Sketchfull.layers.splice(position, 0, layer);
-				// Sketchfull.layer = position;
+				Sketchfull.layer = position;
 
+				Sketchfull.dirtyLayers = -1; // Nasty hack to solve a bug where certain layers don't render.
 				Sketchfull.dirty = true;
 
 				return false;
@@ -712,6 +770,8 @@ const Sketchfull = {
 	},
 
 	SelectLayer(layer) {
+		layer = typeof value === 'number' ? layer : parseInt(layer);
+
 		if(layer < 0 || layer >= Sketchfull.layers.length) return false;
 		Sketchfull.layer = layer;
 		Sketchfull.dirty = true;

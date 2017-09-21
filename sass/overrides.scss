@@ -41,6 +41,16 @@ nav {
 	flex: none;
 }
 
+.xscroll {
+	overflow-x: scroll;
+	overflow-y: hidden;
+}
+
+.yscroll {
+	overflow-x: hidden;
+	overflow-y: scroll;
+}
+
 #sketch-container {
 	flex: auto;
 	background: #222;
@@ -79,10 +89,10 @@ canvas {
 #sketch-tool-panel, #sketch-color-panel, #sketch-layer-panel {
 	position: absolute;
 	text-align: center;
-	display: inline-block;
+	display: flex;
+	flex-direction: column;
 	margin: 0;
-	overflow-x: hidden;
-	overflow-y: scroll;
+	overflow: hidden;
 	z-index: 25;
 }
 
@@ -99,7 +109,7 @@ canvas {
 	bottom: 10px;
 
 	.colpick {
-		display: block;
+		display: list-item;
 		width: 100%;
 		height: 100%;
 		padding: 0;
