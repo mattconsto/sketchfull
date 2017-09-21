@@ -21,9 +21,11 @@
 	</script>
 
 	<script id="sfui-layer-panel" type="text/ractive">
+		<ul id="sketch-layers">
 		{{#each layers: index}}
-			<p {{#if (layer == index)}}class="red-text"{{/if}}>{{name}} ({{type}}) {{index}} - <a onclick="Sketchfull.SelectLayer({{index}})">Select</a> <a onclick="Sketchfull.DeleteLayer({{index}})">Delete</a></p>
+			<li data-index="{{index}}" {{#if (layer == index)}}class="red-text"{{/if}}>{{name}} ({{type}}) - <a onclick="Sketchfull.SelectLayer({{index}})">Select</a> <a onclick="Sketchfull.NameLayer({{index}}, prompt('Please Enter a name', '{{name}}'))">Name</a> <a onclick="Sketchfull.DeleteLayer({{index}})">Delete</a></li>
 		{{/each}}
+		</ul>
 
 		<p><a onclick="Sketchfull.NewLayer()">New Layer</a></p>
 	</script>

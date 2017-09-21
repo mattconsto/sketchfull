@@ -7,7 +7,7 @@ $("script.auto-component[type='text/ractive']").each((index, element) => {Ractiv
 const Sketchfull = {
 	canvas: [],
 	layers: [
-		{type: "bitmap", name: "Bitmap Layer", x: 0, y: 0, data: new ImageData(500, 500)}
+		{type: "bitmap", name: "Layer 0", x: 0, y: 0, data: new ImageData(500, 500)}
 	],
 	layer: 0,
 	tools: {
@@ -255,7 +255,7 @@ const Sketchfull = {
 				var text = prompt("Enter text:");
 				if(!text) return;
 
-				Sketchfull.layers.splice(Sketchfull.layer+1, 0, {type: "text", name: "Text Layer", x: x, y: y, data: {color: Sketchfull.options.color, text: text}});
+				Sketchfull.layers.splice(Sketchfull.layer+1, 0, {type: "text", name: text, x: x, y: y, data: {color: Sketchfull.options.color, text: text}});
 				Sketchfull.layer += 1;
 				Sketchfull.dirty = true;
 			},
@@ -501,6 +501,28 @@ const Sketchfull = {
 			}
 		});
 
+		// Layer reorder
+		var sortableStart;
+		$("#sketch-layers").sortable({
+			// containment: "parent",
+			start(event, ui) {
+				sortableStart = ui.item[0].dataset.index;
+			},
+			stop(event, ui) {
+				var a = ui.item.prev()[0], b = ui.item.next()[0];
+				if(a === undefined && b === undefined) return false;
+
+				var position = b !== undefined ? (b.dataset.index > sortableStart ? b.dataset.index - 1 : b.dataset.index) : a.dataset.index + 1;
+				var layer = Sketchfull.layers.splice(sortableStart, 1)[0];
+				Sketchfull.layers.splice(position, 0, layer);
+				// Sketchfull.layer = position;
+
+				Sketchfull.dirty = true;
+
+				return false;
+			}
+		});
+
 		$("#sketch-thickness").on("change", e => {
 			Sketchfull.options.width = e.target.value
 		});
@@ -635,26 +657,40 @@ const Sketchfull = {
 	},
 
 	SelectLayer(layer) {
-		if(layer < 0 || layer >= Sketchfull.layers.length) return;
+		if(layer < 0 || layer >= Sketchfull.layers.length) return false;
 		Sketchfull.layer = layer;
 		Sketchfull.dirty = true;
+
+		return true;
 	},
 
 	NewLayer() {
 		if(Sketchfull.layers.length == 0) {
-			Sketchfull.layers[0] = {type: "bitmap", name: "Bitmap Layer", x: 0, y: 0, data: new ImageData(500, 500)};
+			Sketchfull.layers[0] = {type: "bitmap", name: "Layer 0", x: 0, y: 0, data: new ImageData(500, 500)};
 			Sketchfull.layer = 0;
 		} else {
-			Sketchfull.layers.splice(Sketchfull.layer + 1, 0, {type: "bitmap", name: "Bitmap Layer", x: 0, y: 0, data: new ImageData(500, 500)});
+			Sketchfull.layers.splice(Sketchfull.layer + 1, 0, {type: "bitmap", name: "Layer " + Sketchfull.layers.length, x: 0, y: 0, data: new ImageData(500, 500)});
 			Sketchfull.layer += 1;
 		}
 		Sketchfull.dirty = true;
 	},
 
 	DeleteLayer(layer) {
-		if(layer < 0 || layer >= Sketchfull.layers.length) return;
+		if(layer < 0 || layer >= Sketchfull.layers.length) return false;
+
+		if(layer == Sketchfull.layer) Sketchfull.layer -= 1;
+
 		Sketchfull.layers.splice(layer, 1);
 		Sketchfull.dirty = true;
+
+		return true;
+	},
+
+	NameLayer(layer, name) {
+		if(layer < 0 || layer >= Sketchfull.layers.length) return false;
+		Sketchfull.layers[layer].name = name;
+		Sketchfull.dirty = true;
+		return true;
 	},
 
 	ResetZoom() {
