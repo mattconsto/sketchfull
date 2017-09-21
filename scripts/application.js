@@ -379,6 +379,8 @@ const Sketchfull = {
 	tool: "pencil",
 	background: "transparent",
 	dirty: false,
+	dirtyLayer: 0, // Layer index
+	dirtyLayers: 1, // Number of layers
 	isMouseDown: false,
 
 	get currentLayer() {
@@ -427,10 +429,67 @@ const Sketchfull = {
 			Sketchfull.canvas.style.left = Sketchfull.transform.x + "%";
 			Sketchfull.canvas.style.top	= Sketchfull.transform.y + "%";
 			Sketchfull.canvas.style.width	= Sketchfull.zoom * Sketchfull.currentLayer.data.width + "px";
-			Sketchfull.canvas.style.height	= Sketchfull.zoom * Sketchfull.currentLayer.data.height + "px";
+			Sketchfull.canvas.style.height= Sketchfull.zoom * Sketchfull.currentLayer.data.height + "px";
 
 			Sketchfull.ractive.set("layers", Sketchfull.layers);
 			Sketchfull.ractive.set("layer", Sketchfull.layer);
+
+			// Only re-composite layers if necessary.
+			if(Sketchfull.dirtyLayers != Sketchfull.layers.length || Sketchfull.dirtyLayer != Sketchfull.layer) {
+				// Update variables.
+				Sketchfull.dirtyLayers = Sketchfull.layers.length;
+				Sketchfull.dirtyLayer = Sketchfull.layer;
+
+				for(var i = 0; i < Sketchfull.layer; i++) {
+					switch(Sketchfull.layers[i].type) {
+						case "bitmap": {
+							console.log("Draw bitmap");
+							var last = Sketchfull.backcanvas.context.getImageData(0, 0, Sketchfull.backcanvas.width, Sketchfull.canvas.height);
+							var next = Sketchfull.layers[i].data;
+							for(var j = 0; j < last.data.length; j += 4) {
+								last.data[j + 0] = Math.round(Math.lerp(last.data[j + 0], next.data[j + 0], next.data[j + 3] / 255));
+								last.data[j + 1] = Math.round(Math.lerp(last.data[j + 1], next.data[j + 1], next.data[j + 3] / 255));
+								last.data[j + 2] = Math.round(Math.lerp(last.data[j + 2], next.data[j + 2], next.data[j + 3] / 255));
+								last.data[j + 3] = Math.min(255, last.data[j + 3] + next.data[j + 3]);
+							}
+							Sketchfull.backcanvas.context.putImageData(last, 0, 0);
+						}; break;
+						case "text": {
+							console.log("Draw text");
+							Sketchfull.backcanvas.context.font = "20px Arial";
+							Sketchfull.backcanvas.context.fillStyle = "rgb(" + Sketchfull.layers[i].data.color.r + ", " + Sketchfull.layers[i].data.color.g + ", " + Sketchfull.layers[i].data.color.b + ")";
+							Sketchfull.backcanvas.context.fillText(Sketchfull.layers[i].data.text, Sketchfull.layers[i].x, Sketchfull.layers[i].y);
+						}; break;
+						default:
+							console.warn("Cannot draw layer");
+					}
+				}
+
+				for(var i = Sketchfull.layer + 1; i < Sketchfull.layers.length; i++) {
+					switch(Sketchfull.layers[i].type) {
+						case "bitmap": {
+							console.log("Draw bitmap");
+							var last = Sketchfull.forecanvas.context.getImageData(0, 0, Sketchfull.forecanvas.width, Sketchfull.forecanvas.height);
+							var next = Sketchfull.layers[i].data;
+							for(var j = 0; j < last.data.length; j += 4) {
+								last.data[j + 0] = Math.round(Math.lerp(last.data[j + 0], next.data[j + 0], next.data[j + 3] / 255));
+								last.data[j + 1] = Math.round(Math.lerp(last.data[j + 1], next.data[j + 1], next.data[j + 3] / 255));
+								last.data[j + 2] = Math.round(Math.lerp(last.data[j + 2], next.data[j + 2], next.data[j + 3] / 255));
+								last.data[j + 3] = Math.min(255, last.data[j + 3] + next.data[j + 3]);
+							}
+							Sketchfull.forecanvas.context.putImageData(last, 0, 0);
+						}; break;
+						case "text": {
+							console.log("Draw text");
+							Sketchfull.forecanvas.context.font = "20px Arial";
+							Sketchfull.forecanvas.context.fillStyle = "rgb(" + Sketchfull.layers[i].data.color.r + ", " + Sketchfull.layers[i].data.color.g + ", " + Sketchfull.layers[i].data.color.b + ")";
+							Sketchfull.forecanvas.context.fillText(Sketchfull.layers[i].data.text, Sketchfull.layers[i].x, Sketchfull.layers[i].y);
+						}; break;
+						default:
+							console.warn("Cannot draw layer");
+					}
+				}
+			}
 
 			// Draw layers
 			if(Sketchfull.background == "transparent") {
@@ -440,30 +499,50 @@ const Sketchfull = {
 				Sketchfull.canvas.context.fillRect(0, 0, Sketchfull.canvas.width, Sketchfull.canvas.height);
 			}
 
-			for(var i = 0; i < Sketchfull.layers.length; i++) {
-				switch(Sketchfull.layers[i].type) {
-					case "bitmap": {
-						console.log("Draw bitmap");
-						var last = Sketchfull.canvas.context.getImageData(0, 0, Sketchfull.canvas.width, Sketchfull.canvas.height);
-						var next = Sketchfull.layers[i].data;
-						for(var j = 0; j < last.data.length; j += 4) {
-							last.data[j + 0] = Math.round(Math.lerp(last.data[j + 0], next.data[j + 0], next.data[j + 3] / 255));
-							last.data[j + 1] = Math.round(Math.lerp(last.data[j + 1], next.data[j + 1], next.data[j + 3] / 255));
-							last.data[j + 2] = Math.round(Math.lerp(last.data[j + 2], next.data[j + 2], next.data[j + 3] / 255));
-							last.data[j + 3] = Math.min(255, last.data[j + 3] + next.data[j + 3]);
-						}
-						Sketchfull.canvas.context.putImageData(last, 0, 0);
-					}; break;
-					case "text": {
-						console.log("Draw text");
-						Sketchfull.canvas.context.font = "20px Arial";
-						Sketchfull.canvas.context.fillStyle = "rgb(" + Sketchfull.layers[i].data.color.r + ", " + Sketchfull.layers[i].data.color.g + ", " + Sketchfull.layers[i].data.color.b + ")";
-						Sketchfull.canvas.context.fillText(Sketchfull.layers[i].data.text, Sketchfull.layers[i].x, Sketchfull.layers[i].y);
-					}; break;
-					default:
-						console.warn("Cannot draw layer");
-				}
+			// Merge
+			var last = Sketchfull.canvas.context.getImageData(0, 0, Sketchfull.canvas.width, Sketchfull.canvas.height);
+			var next = Sketchfull.backcanvas.context.getImageData(0, 0, Sketchfull.backcanvas.width, Sketchfull.backcanvas.height);
+			for(var j = 0; j < last.data.length; j += 4) {
+				last.data[j + 0] = Math.round(Math.lerp(last.data[j + 0], next.data[j + 0], next.data[j + 3] / 255));
+				last.data[j + 1] = Math.round(Math.lerp(last.data[j + 1], next.data[j + 1], next.data[j + 3] / 255));
+				last.data[j + 2] = Math.round(Math.lerp(last.data[j + 2], next.data[j + 2], next.data[j + 3] / 255));
+				last.data[j + 3] = Math.min(255, last.data[j + 3] + next.data[j + 3]);
 			}
+			Sketchfull.canvas.context.putImageData(last, 0, 0);
+
+			var i = Sketchfull.layer;
+			switch(Sketchfull.layers[i].type) {
+				case "bitmap": {
+					console.log("Draw bitmap");
+					var last = Sketchfull.canvas.context.getImageData(0, 0, Sketchfull.canvas.width, Sketchfull.canvas.height);
+					var next = Sketchfull.layers[i].data;
+					for(var j = 0; j < last.data.length; j += 4) {
+						last.data[j + 0] = Math.round(Math.lerp(last.data[j + 0], next.data[j + 0], next.data[j + 3] / 255));
+						last.data[j + 1] = Math.round(Math.lerp(last.data[j + 1], next.data[j + 1], next.data[j + 3] / 255));
+						last.data[j + 2] = Math.round(Math.lerp(last.data[j + 2], next.data[j + 2], next.data[j + 3] / 255));
+						last.data[j + 3] = Math.min(255, last.data[j + 3] + next.data[j + 3]);
+					}
+					Sketchfull.canvas.context.putImageData(last, 0, 0);
+				}; break;
+				case "text": {
+					console.log("Draw text");
+					Sketchfull.canvas.context.font = "20px Arial";
+					Sketchfull.canvas.context.fillStyle = "rgb(" + Sketchfull.layers[i].data.color.r + ", " + Sketchfull.layers[i].data.color.g + ", " + Sketchfull.layers[i].data.color.b + ")";
+					Sketchfull.canvas.context.fillText(Sketchfull.layers[i].data.text, Sketchfull.layers[i].x, Sketchfull.layers[i].y);
+				}; break;
+				default:
+					console.warn("Cannot draw layer");
+			}
+
+			var last = Sketchfull.canvas.context.getImageData(0, 0, Sketchfull.canvas.width, Sketchfull.canvas.height);
+			var next = Sketchfull.forecanvas.context.getImageData(0, 0, Sketchfull.forecanvas.width, Sketchfull.forecanvas.height);
+			for(var j = 0; j < last.data.length; j += 4) {
+				last.data[j + 0] = Math.round(Math.lerp(last.data[j + 0], next.data[j + 0], next.data[j + 3] / 255));
+				last.data[j + 1] = Math.round(Math.lerp(last.data[j + 1], next.data[j + 1], next.data[j + 3] / 255));
+				last.data[j + 2] = Math.round(Math.lerp(last.data[j + 2], next.data[j + 2], next.data[j + 3] / 255));
+				last.data[j + 3] = Math.min(255, last.data[j + 3] + next.data[j + 3]);
+			}
+			Sketchfull.canvas.context.putImageData(last, 0, 0);
 
 			Sketchfull.dirty = false;
 		}
@@ -492,6 +571,14 @@ const Sketchfull = {
 		Sketchfull.canvas.height = 500;
 		Sketchfull.canvas.isMouseDown = false;
 		Sketchfull.canvas.context = Sketchfull.canvas.getContext("2d");
+
+		// For better performance.
+		Sketchfull.forecanvas = document.createElement('canvas');
+		Sketchfull.backcanvas = document.createElement('canvas');
+		Sketchfull.backcanvas.width = Sketchfull.forecanvas.width = Sketchfull.canvas.width;
+		Sketchfull.backcanvas.height = Sketchfull.forecanvas.height = Sketchfull.canvas.height;
+		Sketchfull.forecanvas.context = Sketchfull.forecanvas.getContext("2d");
+		Sketchfull.backcanvas.context = Sketchfull.backcanvas.getContext("2d");
 
 		// Handle switching
 		$("#sketch-tools a").on("click", e => {
