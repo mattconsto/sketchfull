@@ -1,5 +1,6 @@
 Math.clamp = (value, min, max) => value > min ? (value < max ? value: max) : min;
 Math.lerp  = (v0, v1, t) => v0 * (1 - t) + v1 * t;
+Array.prototype.last = function() {return this[this.length - 1];};
 
 // Automatically compile simple templates
 $("script.auto-component[type='text/ractive']").each((index, element) => {Ractive.components[element.id] = Ractive.extend({template: element.innerHTML, isolated: false})});
@@ -7,7 +8,7 @@ $("script.auto-component[type='text/ractive']").each((index, element) => {Ractiv
 const Sketchfull = {
 	canvas: [],
 	layers: [
-		{type: "bitmap", name: "Layer 0", x: 0, y: 0, data: new ImageData(500, 500)}
+		{type: "bitmap", visible: true, name: "Layer 0", x: 0, y: 0, data: new ImageData(500, 500)}
 	],
 	layer: 0,
 	tools: {
@@ -18,6 +19,7 @@ const Sketchfull = {
 
 		},
 		move: {
+			switch: true,
 			toolbar: '<ul><li><span>Move</span></li></ul>',
 			Move(layer, x0, y0, x1, y1) {
 				layer.x += x1 - x0;
@@ -26,6 +28,7 @@ const Sketchfull = {
 			}
 		},
 		select: {
+			switch: true,
 			options: {
 			},
 			toolbar: '<ul><li><span>Select</span></li></ul>',
@@ -38,6 +41,7 @@ const Sketchfull = {
 			}
 		},
 		pick: {
+			switch: true,
 			options: {
 				alllayers: false
 			},
@@ -62,6 +66,7 @@ const Sketchfull = {
 			}
 		},
 		erase: {
+			switch: true,
 			options: {
 				thickness: 5,
 			},
@@ -121,6 +126,7 @@ const Sketchfull = {
 			}
 		},
 		pencil: {
+			switch: true,
 			options: {
 				thickness: 5,
 			},
@@ -179,6 +185,7 @@ const Sketchfull = {
 			}
 		},
 		brush: {
+			switch: true,
 			options: {
 			},
 			toolbar: '<ul><li><span>Brush</span></li></ul>',
@@ -191,6 +198,7 @@ const Sketchfull = {
 			}
 		},
 		fill: {
+			switch: true,
 			options: {
 				threshold: 0,
 			},
@@ -239,6 +247,7 @@ const Sketchfull = {
 			}
 		},
 		gradient: {
+			switch: true,
 			options: {
 			},
 			toolbar: '<ul><li><span>Gradient</span></li></ul>',
@@ -251,6 +260,7 @@ const Sketchfull = {
 			}
 		},
 		spray: {
+			switch: true,
 			options: {
 				thickness: 5,
 				chance: 0.75,
@@ -280,6 +290,7 @@ const Sketchfull = {
 			}
 		},
 		text: {
+			switch: true,
 			options: {
 			},
 			toolbar: '<ul><li><span>Text</span></li></ul>',
@@ -287,12 +298,13 @@ const Sketchfull = {
 				var text = prompt("Enter text:");
 				if(!text) return;
 
-				Sketchfull.layers.splice(Sketchfull.layer+1, 0, {type: "text", name: text, x: x, y: y, data: {color: Sketchfull.options.color, text: text}});
+				Sketchfull.layers.splice(Sketchfull.layer+1, 0, {type: "text", visible: true, name: text, x: x, y: y, data: {color: Sketchfull.options.color, text: text}});
 				Sketchfull.layer += 1;
 				Sketchfull.dirty = true;
 			}
 		},
 		line: {
+			switch: true,
 			options: {
 			},
 			toolbar: '<ul><li><span>Line</span></li></ul>',
@@ -305,6 +317,7 @@ const Sketchfull = {
 			}
 		},
 		rectangle: {
+			switch: true,
 			options: {
 			},
 			toolbar: '<ul><li><span>Rectangle</span></li></ul>',
@@ -317,6 +330,7 @@ const Sketchfull = {
 			}
 		},
 		circle: {
+			switch: true,
 			options: {
 			},
 			toolbar: '<ul><li><span>Circle</span></li></ul>',
@@ -329,15 +343,17 @@ const Sketchfull = {
 			}
 		},
 		zoomin: {
+			switch: false,
 			toolbar: '<ul><li><span>Zoom</span></li></ul>',
-			Start(layer, x, y) {
+			Init() {
 				Sketchfull.zoom = Math.clamp(Sketchfull.zoom + 0.2, 0.01, 1000);
 				Sketchfull.dirty = true;
 			}
 		},
 		zoomout: {
+			switch: false,
 			toolbar: '<ul><li><span>Zoom</span></li></ul>',
-			Start(layer, x, y) {
+			Init() {
 				Sketchfull.zoom = Math.clamp(Sketchfull.zoom - 0.2, 0.01, 1000);
 				Sketchfull.dirty = true;
 			}
@@ -397,10 +413,11 @@ const Sketchfull = {
 	},
 	options: {
 		color: {r: 0, g: 0, b: 255},
-		width: 10
+		width: 10,
+		dimensions: {width: 500, height: 500},
 	},
 	touches:{},
-	transform: {x: 0, y: 50},
+	transform: {x: 50, y: 50},
 	zoom: 1,
 	tool: "pencil",
 	background: "transparent",
@@ -469,16 +486,17 @@ const Sketchfull = {
 			}
 
 			if(Sketchfull.dirty) {
-				Sketchfull.canvas.style.left   = Sketchfull.transform.x + "%";
-				Sketchfull.canvas.style.top    = Sketchfull.transform.y + "%";
-				Sketchfull.canvas.style.width  = Sketchfull.zoom * Sketchfull.currentLayer.data.width  + "px";
-				Sketchfull.canvas.style.height = Sketchfull.zoom * Sketchfull.currentLayer.data.height + "px";
+				Sketchfull.canvas.style.translate = "translate3d(" + Sketchfull.transform.x + "%," + Sketchfull.transform.y + "%, 0)";
+				Sketchfull.canvas.style.width  = Sketchfull.zoom * Sketchfull.options.dimensions.width  + "px";
+				Sketchfull.canvas.style.height = Sketchfull.zoom * Sketchfull.options.dimensions.height + "px";
 
 				Sketchfull.ractive.set("layers", Sketchfull.layers);
 				Sketchfull.ractive.set("layer", Sketchfull.layer);
 
 				// Only re-composite layers if necessary.
 				if(Sketchfull.dirtyLayers != Sketchfull.layers.length || Sketchfull.dirtyLayer != Sketchfull.layer) {
+					console.log("Re-compositing");
+
 					// Update variables.
 					Sketchfull.dirtyLayers = Sketchfull.layers.length;
 					Sketchfull.dirtyLayer = Sketchfull.layer;
@@ -492,6 +510,8 @@ const Sketchfull = {
 					Sketchfull.backcanvas.context.fillRect(0, 0, Sketchfull.backcanvas.width, Sketchfull.backcanvas.height);
 
 					for(var i = 0; i < Sketchfull.layer; i++) {
+						if(!Sketchfull.layers[i].visible) continue;
+
 						Sketchfull.layercanvas.context.clearRect(0, 0, Sketchfull.layercanvas.width, Sketchfull.layercanvas.height);
 						switch(Sketchfull.layers[i].type) {
 							case "bitmap": CompositeBitmapLayer(Sketchfull.layercanvas.context, Sketchfull.layers[i]); break;
@@ -510,6 +530,8 @@ const Sketchfull = {
 					}
 
 					for(var i = Sketchfull.layer + 1; i < Sketchfull.layers.length; i++) {
+						if(!Sketchfull.layers[i].visible) continue;
+
 						Sketchfull.layercanvas.context.clearRect(0, 0, Sketchfull.layercanvas.width, Sketchfull.layercanvas.height);
 						switch(Sketchfull.layers[i].type) {
 							case "bitmap": CompositeBitmapLayer(Sketchfull.layercanvas.context, Sketchfull.layers[i]); break;
@@ -532,25 +554,25 @@ const Sketchfull = {
 				Sketchfull.canvas.context.clearRect(0, 0, Sketchfull.canvas.width, Sketchfull.canvas.height);
 
 				// Merge
-				if(Sketchfull.layer > 0) {
-					CompositeBitmapLayer(Sketchfull.canvas.context, Sketchfull.backcanvas.context.getImageData(0, 0, Sketchfull.backcanvas.width, Sketchfull.backcanvas.height));
-				}
+				CompositeBitmapLayer(Sketchfull.canvas.context, Sketchfull.backcanvas.context.getImageData(0, 0, Sketchfull.backcanvas.width, Sketchfull.backcanvas.height));
 
 				// Draw current layer
-				Sketchfull.layercanvas.context.clearRect(0, 0, Sketchfull.layercanvas.width, Sketchfull.layercanvas.height);
-				switch(Sketchfull.layers[Sketchfull.layer].type) {
-					case "bitmap": CompositeBitmapLayer(Sketchfull.layercanvas.context, Sketchfull.layers[Sketchfull.layer]); break;
-					case "text": CompositeTextLayer(Sketchfull.layercanvas.context, Sketchfull.layers[Sketchfull.layer]); break;
-					default: console.warn("Cannot draw layer");
-				}
-				Sketchfull.canvas.context.drawImage(Sketchfull.layercanvas, 0, 0);
+				if(Sketchfull.layers[Sketchfull.layer].visible) {
+					Sketchfull.layercanvas.context.clearRect(0, 0, Sketchfull.layercanvas.width, Sketchfull.layercanvas.height);
+					switch(Sketchfull.layers[Sketchfull.layer].type) {
+						case "bitmap": CompositeBitmapLayer(Sketchfull.layercanvas.context, Sketchfull.layers[Sketchfull.layer]); break;
+						case "text": CompositeTextLayer(Sketchfull.layercanvas.context, Sketchfull.layers[Sketchfull.layer]); break;
+						default: console.warn("Cannot draw layer");
+					}
+					Sketchfull.canvas.context.drawImage(Sketchfull.layercanvas, 0, 0);
 
-				// Thumbnail
-				var thumbcanvas = $("#sketch-layers > div[data-index='" + Sketchfull.layer + "'] canvas")[0];
-				if(thumbcanvas) {
-					thumbcanvas.context = thumbcanvas.getContext("2d");
-					thumbcanvas.context.clearRect(0, 0, thumbcanvas.width, thumbcanvas.height);
-					thumbcanvas.context.drawImage(Sketchfull.layercanvas, 0, 0, thumbcanvas.width, thumbcanvas.height);
+					// Thumbnail
+					var thumbcanvas = $("#sketch-layers > div[data-index='" + Sketchfull.layer + "'] canvas")[0];
+					if(thumbcanvas) {
+						thumbcanvas.context = thumbcanvas.getContext("2d");
+						thumbcanvas.context.clearRect(0, 0, thumbcanvas.width, thumbcanvas.height);
+						thumbcanvas.context.drawImage(Sketchfull.layercanvas, 0, 0, thumbcanvas.width, thumbcanvas.height);
+					}
 				}
 
 				// Foreground
@@ -573,18 +595,25 @@ const Sketchfull = {
 			data: {layers: Sketchfull.layers, layer: Sketchfull.layer}
 		});
 
-		$(".dropdown-button").dropdown();
+		$(".dropdown-button").dropdown({
+			constrainWidth: false,
+			belowOrigin: true
+		});
+		$('.dropdown-content .dropdown-button').on("click", e => {e.stopPropagation();});
 		$(".resizable").resizable();
 		$(".draggable").draggable({handle: ".draggable-handle"});
 		$(".colpick").colpick({
 			color: "0000ff",
 			flat: true,
+			submit: false,
 			onChange: (hsb, hex, rgb, el, bySetColor) => Sketchfull.options.color = rgb
 		});
+		$('.tooltipped').tooltip({delay: 50});
+		$('.modal').modal({endingTop: '50%'});
 
 		Sketchfull.canvas = $("#sketch-canvas")[0];
-		Sketchfull.canvas.width = 500;
-		Sketchfull.canvas.height = 500;
+		Sketchfull.canvas.width = Sketchfull.options.dimensions.width;
+		Sketchfull.canvas.height = Sketchfull.options.dimensions.height;
 		Sketchfull.canvas.isMouseDown = false;
 		Sketchfull.canvas.context = Sketchfull.canvas.getContext("2d");
 
@@ -601,9 +630,9 @@ const Sketchfull = {
 		// Handle switching
 		$("#sketch-tools a").on("click", e => {
 			if("tool" in e.currentTarget.dataset && e.currentTarget.dataset.tool in Sketchfull.tools) {
-				Sketchfull.tool = e.currentTarget.dataset.tool;
-				$("#sketch-toolbar").html(Sketchfull.tools[Sketchfull.tool].toolbar);
-				if(Sketchfull.currentTool.Init) Sketchfull.currentTool.Init()
+				if(Sketchfull.tools[e.currentTarget.dataset.tool].switch) $("#sketch-toolbar").html(Sketchfull.currentTool.toolbar);
+				if(Sketchfull.tools[e.currentTarget.dataset.tool].Init) Sketchfull.tools[e.currentTarget.dataset.tool].Init();
+				if(Sketchfull.tools[e.currentTarget.dataset.tool].switch) Sketchfull.tool = e.currentTarget.dataset.tool;
 			}
 		});
 
@@ -642,8 +671,8 @@ const Sketchfull = {
 				e.preventDefault();
 				Sketchfull.zoom = Math.clamp(Sketchfull.zoom - e.deltaY / 1000, 0.01, 1000);
 			} else { // Move
-				Sketchfull.transform.x += -e.deltaX / 25;
-				Sketchfull.transform.y += -e.deltaY / 25;
+				Sketchfull.transform.x += e.deltaX / 25;
+				Sketchfull.transform.y += e.deltaY / 25;
 			}
 
 			Sketchfull.canvas.style.left = Sketchfull.transform.x + "%";
@@ -657,7 +686,7 @@ const Sketchfull = {
 			if(Sketchfull.currentTool.Start)
 				Sketchfull.currentTool.Start(
 					Sketchfull.currentLayer,
-					(e.pageX - Sketchfull.canvas.offsetLeft) / Sketchfull.canvas.offsetWidth * Sketchfull.canvas.width,
+					(e.pageX - Sketchfull.canvas.offsetLeft + Sketchfull.canvas.offsetWidth/2) / Sketchfull.canvas.offsetWidth * Sketchfull.canvas.width,
 					(e.pageY - Sketchfull.canvas.offsetTop + Sketchfull.canvas.offsetHeight/2) / Sketchfull.canvas.offsetHeight * Sketchfull.canvas.height
 				);
 		});
@@ -668,7 +697,7 @@ const Sketchfull = {
 				if(Sketchfull.currentTool.Start)
 					Sketchfull.currentTool.Start(
 						Sketchfull.currentLayer,
-						(e.changedTouches[i].pageX - e.changedTouches[i].target.offsetLeft) / e.changedTouches[i].target.offsetWidth * Sketchfull.canvas.width,
+						(e.changedTouches[i].pageX - e.changedTouches[i].target.offsetLeft + e.changedTouches[i].target.offsetWidth/2) / e.changedTouches[i].target.offsetWidth * Sketchfull.canvas.width,
 						(e.changedTouches[i].pageY - e.changedTouches[i].target.offsetTop + e.changedTouches[i].target.offsetHeight/2) / e.changedTouches[i].target.offsetHeight * Sketchfull.canvas.height
 					);
 			}
@@ -679,9 +708,9 @@ const Sketchfull = {
 				if(Sketchfull.currentTool.Move)
 					Sketchfull.currentTool.Move(
 						Sketchfull.currentLayer,
-						((e.pageX - Sketchfull.canvas.offsetLeft) - e.movementX) / Sketchfull.canvas.offsetWidth * Sketchfull.canvas.width,
+						((e.pageX - Sketchfull.canvas.offsetLeft + Sketchfull.canvas.offsetWidth/2) - e.movementX) / Sketchfull.canvas.offsetWidth * Sketchfull.canvas.width,
 						((e.pageY - Sketchfull.canvas.offsetTop + Sketchfull.canvas.offsetHeight/2) - e.movementY) / Sketchfull.canvas.offsetHeight * Sketchfull.canvas.height,
-						(e.pageX - Sketchfull.canvas.offsetLeft) / Sketchfull.canvas.offsetWidth * Sketchfull.canvas.width,
+						(e.pageX - Sketchfull.canvas.offsetLeft + Sketchfull.canvas.offsetWidth/2) / Sketchfull.canvas.offsetWidth * Sketchfull.canvas.width,
 						(e.pageY - Sketchfull.canvas.offsetTop + Sketchfull.canvas.offsetHeight/2) / Sketchfull.canvas.offsetHeight * Sketchfull.canvas.height
 					);
 			}
@@ -694,9 +723,9 @@ const Sketchfull = {
 				if(Sketchfull.currentTool.Move)
 					Sketchfull.currentTool.Move(
 						Sketchfull.currentLayer,
-						(Sketchfull.touches[e.changedTouches[i].identifier].pageX - Sketchfull.touches[e.changedTouches[i].identifier].target.offsetLeft) / Sketchfull.touches[e.changedTouches[i].identifier].target.offsetWidth * Sketchfull.canvas.width,
+						(Sketchfull.touches[e.changedTouches[i].identifier].pageX - Sketchfull.touches[e.changedTouches[i].identifier].target.offsetLeft + e.changedTouches[i].target.offsetWidth/2) / Sketchfull.touches[e.changedTouches[i].identifier].target.offsetWidth * Sketchfull.canvas.width,
 						(Sketchfull.touches[e.changedTouches[i].identifier].pageY - Sketchfull.touches[e.changedTouches[i].identifier].target.offsetTop + Sketchfull.touches[e.changedTouches[i].identifier].target.offsetHeight/2) / Sketchfull.touches[e.changedTouches[i].identifier].target.offsetHeight * Sketchfull.canvas.height,
-						(e.changedTouches[i].pageX - e.changedTouches[i].target.offsetLeft) / e.changedTouches[i].target.offsetWidth * Sketchfull.canvas.width,
+						(e.changedTouches[i].pageX - e.changedTouches[i].target.offsetLeft + e.changedTouches[i].target.offsetWidth/2) / e.changedTouches[i].target.offsetWidth * Sketchfull.canvas.width,
 						(e.changedTouches[i].pageY - e.changedTouches[i].target.offsetTop + e.changedTouches[i].target.offsetHeight/2) / e.changedTouches[i].target.offsetHeight * Sketchfull.canvas.height
 					);
 				Sketchfull.touches[e.changedTouches[i].identifier] = e.changedTouches[i];
@@ -708,7 +737,7 @@ const Sketchfull = {
 			if(Sketchfull.currentTool.End)
 				Sketchfull.currentTool.End(
 					Sketchfull.currentLayer,
-					(e.pageX - Sketchfull.canvas.offsetLeft) / Sketchfull.canvas.offsetWidth * Sketchfull.canvas.width,
+					(e.pageX - Sketchfull.canvas.offsetLeft + Sketchfull.canvas.offsetWidth/2) / Sketchfull.canvas.offsetWidth * Sketchfull.canvas.width,
 					(e.pageY - Sketchfull.canvas.offsetTop + Sketchfull.canvas.offsetHeight/2) / Sketchfull.canvas.offsetHeight * Sketchfull.canvas.height
 				);
 		});
@@ -718,7 +747,7 @@ const Sketchfull = {
 				if(Sketchfull.currentTool.End)
 					Sketchfull.currentTool.End(
 						Sketchfull.currentLayer,
-						(e.changedTouches[i].pageX - e.changedTouches[i].target.offsetLeft) / e.changedTouches[i].target.offsetWidth * Sketchfull.canvas.width,
+						(e.changedTouches[i].pageX - e.changedTouches[i].target.offsetLeft + e.changedTouches[i].target.offsetWidth/2) / e.changedTouches[i].target.offsetWidth * Sketchfull.canvas.width,
 						(e.changedTouches[i].pageY - e.changedTouches[i].target.offsetTop + e.changedTouches[i].target.offsetHeight/2) / e.changedTouches[i].target.offsetHeight * Sketchfull.canvas.height
 					);
 				delete Sketchfull.touches[e.changedTouches[i].identifier];
@@ -740,10 +769,10 @@ const Sketchfull = {
 				console.dir(image);
 				var canvas = document.createElement('canvas');
 				context = canvas.getContext("2d");
-				Sketchfull.canvas.width = canvas.width = image.width;
-				Sketchfull.canvas.height = canvas.height = image.height;
+				canvas.width = image.width;
+				canvas.height = image.height;
 				context.drawImage(image, 0, 0);
-				Sketchfull.layers = {type: "bitmap", name: event.target.fileName, x: 0, y: 0, data: context.getImageData(0, 0, image.width, image.height)};
+				Sketchfull.layers.push({type: "bitmap", visible: true, name: e.srcElement.value.split(/(\/|\\)+/).last(), x: 0, y: 0, data: context.getImageData(0, 0, image.width, image.height)});
 				Sketchfull.dirty = true;
 			}
 			image.src = event.target.result;
@@ -805,16 +834,18 @@ const Sketchfull = {
 
 	NewLayer() {
 		if(Sketchfull.layers.length == 0) {
-			Sketchfull.layers[0] = {type: "bitmap", name: "Layer 0", x: 0, y: 0, data: new ImageData(500, 500)};
+			Sketchfull.layers[0] = {type: "bitmap", visible: true, name: "Layer 0", x: 0, y: 0, data: new ImageData(500, 500)};
 			Sketchfull.layer = 0;
 		} else {
-			Sketchfull.layers.splice(Sketchfull.layer + 1, 0, {type: "bitmap", name: "Layer " + Sketchfull.layers.length, x: 0, y: 0, data: new ImageData(500, 500)});
+			Sketchfull.layers.splice(Sketchfull.layer + 1, 0, {type: "bitmap", visible: true, name: "Layer " + Sketchfull.layers.length, x: 0, y: 0, data: new ImageData(500, 500)});
 			Sketchfull.layer += 1;
 		}
 		Sketchfull.dirty = true;
 	},
 
 	DeleteLayer(layer) {
+		layer = typeof value === 'number' ? layer : parseInt(layer);
+
 		if(layer < 0 || layer >= Sketchfull.layers.length) return false;
 
 		if(layer == Sketchfull.layer) Sketchfull.layer -= 1;
@@ -826,14 +857,30 @@ const Sketchfull = {
 	},
 
 	NameLayer(layer, name) {
+		layer = typeof value === 'number' ? layer : parseInt(layer);
+
 		if(layer < 0 || layer >= Sketchfull.layers.length) return false;
 		Sketchfull.layers[layer].name = name;
 		Sketchfull.dirty = true;
 		return true;
 	},
 
+	ToggleLayer(layer) {
+		layer = typeof value === 'number' ? layer : parseInt(layer);
+
+		if(layer < 0 || layer >= Sketchfull.layers.length) return false;
+
+		Sketchfull.layers[layer].visible = !Sketchfull.layers[layer].visible;
+
+		Sketchfull.dirtyLayers = -1;
+		Sketchfull.dirty = true;
+
+		return true;
+	},
+
 	BackgroundColor(color) {
 		Sketchfull.background = color;
+		Sketchfull.dirtyLayers = -1;
 		Sketchfull.dirty = true;
 	},
 

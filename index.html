@@ -29,7 +29,7 @@
 				</div>
 				<div class="card-stacked">
 					<div class="card-content">
-						<p>{{name}} ({{type}})</p>
+						<p>{{name}} ({{type}}) <a onclick="Sketchfull.ToggleLayer({{index}})" class="right"><i class="material-icons">{{#if visible}}remove_red_eye{{else}}clear{{/if}}</i></a></p>
 					</div>
 					<div class="card-action">
 						<a onclick="Sketchfull.SelectLayer({{index}})">Select</a> 
@@ -45,6 +45,19 @@
 	</script>
 </head>
 <body>
+	<div id="modal-about" class="modal">
+		<div class="modal-content">
+			<h4>Sketchfull</h4>
+			<ul>
+				<li>A bad image editor by <a href="https://github.com/mattconsto/">Matt Consto</a></li>
+				<li>Browse the <a href="https://github.com/mattconsto/sketchfull">Source code</a></li>
+			</ul>
+		</div>
+		<div class="modal-footer">
+			<a href="#!" class="modal-action modal-close waves-effect waves-green btn-flat">Close</a>
+		</div>
+	</div>
+
 	<ul id="dropdown-file" class="dropdown-content">
 		<li><div class="file-field input-field">
 			<div>
@@ -80,7 +93,7 @@
 	</ul>
 
 	<ul id="dropdown-effects" class="dropdown-content">
-		<li><a href="#!" disabled>Flip/Rotate</a></li>
+		<li><a class='dropdown-button' data-activates='dropdown-effects-flip' data-hover="hover" data-beloworigin="false">Flip/Rotate</a></li>
 		<li><a href="#!" disabled>Stretch/Skew</a></li>
 		<li><a onclick="Sketchfull.Invert()">Invert Colors</a></li>
 		<li><a onclick="Sketchfull.Grayscale()">Grayscale</a></li>
@@ -88,20 +101,28 @@
 		<li><a onclick="Sketchfull.Clear()">Clear Canvas</a></li>
 	</ul>
 
+	<ul id="dropdown-effects-flip" class="dropdown-content">
+		<li><a href="#!" disabled>Flip Horizontal</a></li>
+		<li><a href="#!" disabled>Flip Vertical</a></li>
+	</ul>
+
 	<ul id="dropdown-help" class="dropdown-content">
-		<li><a href="#!" disabled>User Guide</a></li>
-		<li><a onclick="alert('A bad image editor by Matt Consto.')">About</a></li>
+		<li><a href="https://github.com/mattconsto/sketchfull/wiki">User Guide</a></li>
+		<li><a class="modal-trigger" href="#modal-about">About</a></li>
 	</ul>
 
 	<nav>
-		<div class="nav-wrapper">
-			<a href="#!" class="brand-logo left"><i class="material-icons">palette</i>Sketchfull</a>
-			<ul class="right">
+		<div class="nav-wrapper" style="display: flex; justify-content: space-between;">
+			<a href="#!" class="brand-logo"><i class="material-icons">palette</i><span class="hide-on-small-only">Sketchfull</span></a>
+			<ul>
 				<li><a class="dropdown-button" href="#!" data-activates="dropdown-file">File<i class="material-icons right">arrow_drop_down</i></a></li>
 				<li><a class="dropdown-button" href="#!" data-activates="dropdown-edit">Edit<i class="material-icons right">arrow_drop_down</i></a></li>
 				<li><a class="dropdown-button" href="#!" data-activates="dropdown-view">View<i class="material-icons right">arrow_drop_down</i></a></li>
 				<li><a class="dropdown-button" href="#!" data-activates="dropdown-effects">Effects<i class="material-icons right">arrow_drop_down</i></a></li>
 				<li><a class="dropdown-button" href="#!" data-activates="dropdown-help">Help<i class="material-icons right">arrow_drop_down</i></a></li>
+			</ul>
+			<ul>
+				<li><a class="dropdown-button" href="#!" ><span class="hide-on-med-and-down">Anonymous</span><i class="material-icons right">account_circle</i></a></li>
 			</ul>
 		</div>
 	</nav>

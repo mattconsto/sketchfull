@@ -23,6 +23,7 @@ html, body {
 
 a {
 	cursor: pointer;
+	color: #26a69a;
 }
 
 a[disabled]:not([disabled="false"]) {
@@ -45,6 +46,11 @@ nav ul > li > span.range-field {
 	padding: 0;
 }
 
+.modal {
+	width: 40%;
+	transform: translateY(-50%) !important;
+}
+
 .xscroll {
 	overflow-x: scroll;
 	overflow-y: hidden;
@@ -60,23 +66,20 @@ nav ul > li > span.range-field {
 	background: #222;
 	height: 100%;
 	width: 100%;
-	text-align: center;
-	overflow: auto;
+	overflow: hidden;
 }
 
 canvas {
-	margin: 0 auto;
 	position: relative;
 	top: 50%;
-	transform: translateY(-50%);
+	left: 50%;
+	transform: translate3d(-50%, -50%, 0);
 	background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACAQMAAABIeJ9nAAAABlBMVEX////u7u5x8T/JAAAADElEQVQI12NwYGgAAAFEAMHrWQMJAAAAAElFTkSuQmCC);
 	background-size: 50px;
 	image-rendering: pixelated;
 	background-position: center;
 	box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.75);
 }
-
-.dropdown-content {top: auto !important}
 
 .card.sketch-panel {
 	*.sketch-panel-title {
@@ -129,4 +132,15 @@ canvas {
 
 .dropdown-content {
 	z-index: 50;
+	overflow-y: visible;
+}
+
+.dropdown-content .dropdown-content {
+	margin-left: 100%;
+}
+
+.brand-logo {
+	left: auto !important;
+	transform: none !important;
+	position: inherit !important;
 }
