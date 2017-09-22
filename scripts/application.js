@@ -79,7 +79,7 @@ const Sketchfull = {
 			switch: true,
 			options: {
 				thickness: 5,
-				hardness: 1,
+				hardness: 0.75,
 				opacity: 255,
 			},
 			toolbar: '<ul><li><span>Erase</span></li><li><span>Line Thickness</span></li><li><span class="range-field"><input type="range" id="sketch-thickness" min="1" max="250" /></span></li><li><span>Opacity</span></li><li><span class="range-field"><input type="range" id="sketch-opacity" min="0" max="255" /></span></li><li><span>Hardness</span></li><li><span class="range-field"><input type="range" id="sketch-hardness" min="0" max="100" /></span></li></ul>',
@@ -161,7 +161,7 @@ const Sketchfull = {
 			switch: true,
 			options: {
 				thickness: 5,
-				hardness: 1,
+				hardness: 0.75,
 				opacity: 255,
 			},
 			toolbar: '<ul><li><span>Pencil</span></li><li><span>Line Thickness</span></li><li><span class="range-field"><input type="range" id="sketch-thickness" min="1" max="250" /></span></li><li><span>Opacity</span></li><li><span class="range-field"><input type="range" id="sketch-opacity" min="0" max="255" /></span></li><li><span>Hardness</span></li><li><span class="range-field"><input type="range" id="sketch-hardness" min="0" max="100" /></span></li></ul>',
@@ -798,6 +798,15 @@ const Sketchfull = {
 					);
 				delete Sketchfull.touches[e.changedTouches[i].identifier];
 			}
+		});
+
+		window.addEventListener("keydown", e => {
+			console.log(e);
+			// https://www.nobledesktop.com/shortcuts/photoshopcs5/pc
+			// key: character
+			// altKey: bool
+			// ctrlKey: bool
+			// shiftKey: bool
 		});
 
 		$(".sketch-panel").removeClass("hide");
