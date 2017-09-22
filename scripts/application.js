@@ -54,7 +54,7 @@ const Sketchfull = {
 			options: {
 				alllayers: false
 			},
-			toolbar: '<ul><li><span>Color Picker</span></li><li><input type="checkbox" id="sketch-tool-pick-alllayers" checked="unchecked" /><label for="sketch-tool-pick-alllayers">Sample all layers</label></li></ul>',
+			toolbar: '<ul><li><span>Color Picker</span></li><li><input type="checkbox" id="sketch-tool-pick-alllayers" checked="unchecked" disabled /><label for="sketch-tool-pick-alllayers">Sample all layers</label></li></ul>',
 			Start(layer, x, y) {
 				switch(layer.type) {
 					case "bitmap":
@@ -75,7 +75,6 @@ const Sketchfull = {
 			}
 		},
 		erase: {
-
 			switch: true,
 			options: {
 				thickness: 5,
@@ -351,13 +350,18 @@ const Sketchfull = {
 		text: {
 			switch: true,
 			options: {
+				size: 20,
 			},
-			toolbar: '<ul><li><span>Text</span></li></ul>',
+			toolbar: '<ul><li><span>Text</span></li><li><span>Font</span></li><li><span>Size</span></li><li><span class="range-field"><input type="range" id="sketch-size" min="1" max="200" /></span></li></ul>',
+			Init() {
+				$("#sketch-size").val(this.options.size);
+				$("#sketch-size").on("change", e => {this.options.size = parseInt(e.target.value)});
+			},
 			Start(layer, x, y) {
 				var text = prompt("Enter text:");
 				if(!text) return;
 
-				Sketchfull.layers.splice(Sketchfull.layer+1, 0, {type: "text", visible: true, name: text, x: x, y: y, data: {color: Sketchfull.options.color, text: text}});
+				Sketchfull.layers.splice(Sketchfull.layer+1, 0, {type: "text", visible: true, name: text, x: x, y: y, data: {color: Sketchfull.options.color, size: this.options.size, text: text}});
 				Sketchfull.layer += 1;
 				Sketchfull.dirty = true;
 			}
@@ -528,7 +532,7 @@ const Sketchfull = {
 	Update(timestamp) {
 		try {
 			var CompositeTextLayer = function(context, layer) {
-				context.font = "20px Arial";
+				context.font = layer.data.size + "px Arial";
 				context.fillStyle = "rgb(" + layer.data.color.r + ", " + layer.data.color.g + ", " + layer.data.color.b + ")";
 				context.fillText(layer.data.text, layer.x, layer.y);
 			}
@@ -676,7 +680,7 @@ const Sketchfull = {
 		// Handle switching
 		$("#sketch-tools a").on("click", e => {
 			if("tool" in e.currentTarget.dataset && e.currentTarget.dataset.tool in Sketchfull.tools) {
-				if(Sketchfull.tools[e.currentTarget.dataset.tool].switch) $("#sketch-toolbar").html(Sketchfull.currentTool.toolbar);
+				if(Sketchfull.tools[e.currentTarget.dataset.tool].switch) $("#sketch-toolbar").html(Sketchfull.tools[e.currentTarget.dataset.tool].toolbar);
 				if(Sketchfull.tools[e.currentTarget.dataset.tool].Init) Sketchfull.tools[e.currentTarget.dataset.tool].Init();
 				if(Sketchfull.tools[e.currentTarget.dataset.tool].switch) Sketchfull.tool = e.currentTarget.dataset.tool;
 			}
