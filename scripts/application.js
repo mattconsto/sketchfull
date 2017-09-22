@@ -952,9 +952,9 @@ const Sketchfull = {
 		Sketchfull.dirty = true;
 	},
 
-	Download(source) {
-		source.download = "image.png";
-		source.href = Sketchfull.canvas.toDataURL("image/png").replace(/^data:image\/[^;]/, 'data:application/octet-stream');
+	Download(source, format) {
+		source.download = "image." + format.split("/")[1];
+		source.href = Sketchfull.canvas.toDataURL(format).replace(/^data:image\/[^;]/, 'data:application/octet-stream');
 	},
 
 	Print() {

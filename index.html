@@ -65,11 +65,19 @@
 				<input type="file" onchange="Sketchfull.Open(event)" />
 			</div>
 		</div></li>
-		<li><a onclick="Sketchfull.Download(this)">Download</a></li>
+		<li><a href="#!" disabled>Save</a></li>
+		<li><a class='dropdown-button' data-activates='dropdown-file-export' data-hover="hover" data-beloworigin="false">Export</a></li>
 		<li><a onclick="Sketchfull.Print()">Print</a></li>
 		<li class="divider"></li>
 		<li><a href="#!" disabled>Resize Image</a></li>
 		<li><a href="#!" disabled>Resize Canvas</a></li>
+	</ul>
+
+	<ul id="dropdown-file-export" class="dropdown-content">
+		<li><a onclick="Sketchfull.Download(this, 'image/png')">Export as PNG</a></li>
+		<li><a onclick="Sketchfull.Download(this, 'image/jpeg', 0.95)">Export as JPG</a></li>
+		<li><a onclick="Sketchfull.Download(this, 'image/gif')">Export as GIF</a></li>
+		<li><a onclick="Sketchfull.Download(this, 'image/bmp')">Export as BMP</a></li>
 	</ul>
 
 	<ul id="dropdown-edit" class="dropdown-content">
