@@ -32,8 +32,9 @@
 						<p>{{name}} ({{type}}) <a onclick="Sketchfull.ToggleLayer({{index}})" class="right"><i class="material-icons">{{#if visible}}remove_red_eye{{else}}clear{{/if}}</i></a></p>
 					</div>
 					<div class="card-action">
-						<a onclick="Sketchfull.SelectLayer({{index}})">Select</a> 
+						<a onclick="Sketchfull.SelectLayer({{index}})" {{#if (layer == index)}}disabled{{/if}}>Select</a> 
 						<a onclick="Sketchfull.NameLayer({{index}}, prompt('Please Enter a name', '{{name}}'))">Name</a> 
+						<a onclick="Sketchfull.Rasterise({{index}})" {{#if (type == "bitmap")}}disabled{{/if}}>Raster</a> 
 						<a onclick="Sketchfull.DeleteLayer({{index}})">Delete</a>
 					</div>
 				</div>
@@ -191,6 +192,7 @@
 	<script src="scripts/jquery-ui-touch-punch.min.js"></script>
 	<script src="scripts/materialize.min.js"></script>
 	<script src="scripts/colpick.js"></script>
+	<script src="scripts/lz-string.min.js"></script>
 	<script src="scripts/application.js"></script>
 </body>
 </html>

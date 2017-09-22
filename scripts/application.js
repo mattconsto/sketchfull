@@ -842,7 +842,6 @@ const Sketchfull = {
 	},
 
 	Invert() {
-		// TODO fix
 		switch(Sketchfull.currentLayer.type) {
 			case "bitmap":
 				var bitmap = Sketchfull.currentLayer.data.context.imagedata;
@@ -866,7 +865,6 @@ const Sketchfull = {
 	},
 
 	Grayscale() {
-		// TODO fix
 		switch(Sketchfull.currentLayer.type) {
 			case "bitmap":
 				var bitmap = Sketchfull.currentLayer.data.context.imagedata;
@@ -945,6 +943,34 @@ const Sketchfull = {
 		return true;
 	},
 
+	Rasterise(layer) {
+		var CompositeTextLayer = function(context, layer) {
+			context.font = layer.data.size + "px Arial";
+			context.fillStyle = "rgb(" + layer.data.color.r + ", " + layer.data.color.g + ", " + layer.data.color.b + ")";
+			context.fillText(layer.data.text, layer.x, layer.y);
+		}
+
+		layer = typeof value === 'number' ? layer : parseInt(layer);
+
+		if(layer < 0 || layer >= Sketchfull.layers.length) return false;
+
+		switch(Sketchfull.layers[layer].type) {
+			case "bitmap": return;
+			case "text":
+				var canvas = createCanvasOfDimensions(Sketchfull.options.dimensions.width, Sketchfull.options.dimensions.height);
+				CompositeTextLayer(canvas.context, Sketchfull.layers[layer]);
+				canvas.context.imagedata = canvas.context.getImageData(0, 0, canvas.width, canvas.height);
+				Sketchfull.layers[layer] = {type: "bitmap", visible: Sketchfull.layers[layer].visible, name: Sketchfull.layers[layer].name, x: 0, y: 0, data: canvas};
+				Sketchfull.dirtyLayers = -1;
+				Sketchfull.dirty = true;
+				break;
+			default:
+				console.warn("Cannot rasterise the current layer")
+		}
+
+		Sketchfull.dirty = true;
+	},
+
 	BackgroundColor(color) {
 		Sketchfull.background = color;
 		Sketchfull.dirtyLayers = -1;
@@ -959,7 +985,10 @@ const Sketchfull = {
 
 	Clear() {
 		switch(Sketchfull.currentLayer.type) {
-			case "bitmap": Sketchfull.currentLayer.data = new ImageData(Sketchfull.currentLayer.data.width, Sketchfull.currentLayer.data.height); break;
+			case "bitmap":
+				Sketchfull.currentLayer.data.context.clearRect(0, 0, Sketchfull.currentLayer.data.width, Sketchfull.currentLayer.data.height);
+				Sketchfull.currentLayer.data.context.imagedata = Sketchfull.currentLayer.data.context.getImageData(0, 0, Sketchfull.currentLayer.data.width, Sketchfull.currentLayer.data.height);
+				break;
 			default: Sketchfull.layers.splice(Sketchfull.layer, 1); break; // Little point clearing a line or text.
 		}
 		Sketchfull.dirty = true;
@@ -970,9 +999,18 @@ const Sketchfull = {
 		source.href = Sketchfull.canvas.toDataURL(format).replace(/^data:image\/[^;]/, 'data:application/octet-stream');
 	},
 
+	Save() {
+		var string = "This is my compression test.";
+		Sketchfull.Log("Size of sample is: " + string.length);
+		var compressed = LZString.compress(string);
+		Sketchfull.Log("Size of compressed sample is: " + compressed.length);
+		string = LZString.decompress(compressed);
+		Sketchfull.Log("Sample is: " + string);
+	},
+
 	Print() {
 		var printwindow = window.open(Sketchfull.canvas.toDataURL("image/png"), "_blank");
-		printwindow.onload = () => window.print();
+		printwindow.onload = function() {window.print();}
 	}
 };
 

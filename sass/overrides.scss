@@ -28,7 +28,7 @@ a {
 
 a[disabled]:not([disabled="false"]) {
 	cursor: default;
-	color: grey;
+	color: grey !important;
 	pointer-events: none;
 }
 
