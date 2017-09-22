@@ -2,13 +2,22 @@ Math.clamp = (value, min, max) => value > min ? (value < max ? value: max) : min
 Math.lerp  = (v0, v1, t) => v0 * (1 - t) + v1 * t;
 Array.prototype.last = function() {return this[this.length - 1];};
 
+const createCanvasOfDimensions = function(width, height) {
+	var canvas   = document.createElement('canvas');
+	canvas.width = width;
+	canvas.height = height;
+	canvas.context = canvas.getContext("2d");
+	canvas.context.imagedata = canvas.context.getImageData(0, 0, canvas.width, canvas.height); // Must trust this to always be there.
+	return canvas;
+}
+
 // Automatically compile simple templates
 $("script.auto-component[type='text/ractive']").each((index, element) => {Ractive.components[element.id] = Ractive.extend({template: element.innerHTML, isolated: false})});
 
 const Sketchfull = {
 	canvas: [],
 	layers: [
-		{type: "bitmap", visible: true, name: "Layer 0", x: 0, y: 0, data: new ImageData(500, 500)}
+		{type: "bitmap", visible: true, name: "Layer 0", x: 0, y: 0, data: createCanvasOfDimensions(500, 500)}
 	],
 	layer: 0,
 	tools: {
@@ -129,26 +138,48 @@ const Sketchfull = {
 			switch: true,
 			options: {
 				thickness: 5,
+				hardness: 1,
+				opacity: 255,
 			},
-			toolbar: '<ul><li><span>Pencil</span></li><li><span>Line Thickness</span></li><li><span class="range-field"><input type="range" id="sketch-thickness" min="1" max="250" /></span></li></ul>',
+			toolbar: '<ul><li><span>Pencil</span></li><li><span>Line Thickness</span></li><li><span class="range-field"><input type="range" id="sketch-thickness" min="1" max="250" /></span></li><li><span>Opacity</span></li><li><span class="range-field"><input type="range" id="sketch-opacity" min="0" max="255" /></span></li><li><span>Hardness</span></li><li><span class="range-field"><input type="range" id="sketch-hardness" min="0" max="100" /></span></li></ul>',
 			Init() {
 				$("#sketch-thickness").val(this.options.thickness);
 				$("#sketch-thickness").on("change", e => {this.options.thickness = parseInt(e.target.value)});
+				$("#sketch-opacity").val(this.options.opacity);
+				$("#sketch-opacity").on("change", e => {this.options.opacity = parseInt(e.target.value)});
+				$("#sketch-hardness").val(100 - this.options.hardness * 100);
+				$("#sketch-hardness").on("change", e => {this.options.hardness = 1 - parseInt(e.target.value) / 100});
 			},
 			Start(layer, x, y) {
-				this.Move(layer, x, y, x, y);
+				var opacity = this.options.opacity;
+
+				var circle = function(bitmap, x, y, r, hardness) {
+					for(var i = -r; i < r; i++) {
+						for(var j = -r; j < r; j++) {
+							Sketchfull.MaximumPixel(bitmap, x + i, y + j, Math.clamp(r - Math.sqrt(i*i + j*j), 0, hardness) / hardness * opacity);
+						}
+					}
+				}
+
+				var r = Math.round(this.options.thickness/2);
+				var bitmap = layer.data.context.imagedata;
+				var hardness = (r - 1) * this.options.hardness + 1;
+
+				circle(bitmap, x, y, r);
+
+				layer.data.context.putImageData(bitmap, 0, 0);
+				Sketchfull.dirty = true;
 			},
 			Move(layer, x0, y0, x1, y1) {
 				if(layer.type != "bitmap") return;
 
-				var circle = function(bitmap, x, y, r) {
-					r = Math.round(r);
+				var opacity = this.options.opacity;
 
-					for(var i = -r-1; i < r+1; i++) {
-						var height = Math.sqrt(r * r - i * i);
-
-						for (var j = Math.floor(-height); j < Math.ceil(height); j++)
-							Sketchfull.MaximumPixel(bitmap, x + i, y + j, Math.clamp(height - Math.abs(j), 0, 1) * 255);
+				var circle = function(bitmap, x, y, r, hardness) {
+					for(var i = -r; i < r; i++) {
+						for(var j = -r; j < r; j++) {
+							Sketchfull.MaximumPixel(bitmap, x + i, y + j, Math.clamp(r - Math.sqrt(i*i + j*j), 0, hardness) / hardness * opacity);
+						}
 					}
 				}
 
@@ -164,14 +195,14 @@ const Sketchfull = {
 				var err = dx - dy;
 
 				var r = Math.round(this.options.thickness/2);
-
-				circle(layer.data, x0, y0, r);
+				var bitmap = layer.data.context.imagedata;
+				var hardness = (r - 1) * this.options.hardness + 1;
 
 				while(true) {
-					for (var x = -r-1; x < r+1; x++)
-						Sketchfull.MaximumPixel(layer.data, x0 + x, y0, Math.clamp(r + 0.5 - Math.abs(x), 0, 1) * 255);
-					for (var y = -r-1; y < r+1; y++)
-						Sketchfull.MaximumPixel(layer.data, x0, y0 + y, Math.clamp(r + 0.5 - Math.abs(y), 0, 1) * 255);
+					for(var x = -r-1; x < r+1; x++)
+						Sketchfull.MaximumPixel(bitmap, x0 + x, y0, Math.clamp(r - Math.abs(x), 0, hardness) / hardness * opacity);
+					for(var y = -r-1; y < r+1; y++)
+						Sketchfull.MaximumPixel(bitmap, x0, y0 + y, Math.clamp(r - Math.abs(y), 0, hardness) / hardness * opacity);
 
 					if((x0 == x1) && (y0 == y1)) break;
 					var e2 = 2 * err;
@@ -179,7 +210,8 @@ const Sketchfull = {
 					if(e2 <	dx) {err += dx; y0 += sy;}
 				}
 
-				circle(layer.data, x0, y0, r);
+				circle(bitmap, x0, y0, r, hardness);
+				layer.data.context.putImageData(bitmap, 0, 0);
 
 				Sketchfull.dirty = true;
 			}
@@ -432,21 +464,21 @@ const Sketchfull = {
 	MinimumPixel(layer, x, y, alpha) {
 		if(x < 0 || y < 0 || x >= layer.width || y >= layer.height) return;
 
-		// console.log(layer, x, y, alpha);
-		layer.data[y * (layer.width * 4) + x * 4 + 0] = (Sketchfull.options.color.r) & 0xff;
-		layer.data[y * (layer.width * 4) + x * 4 + 1] = (Sketchfull.options.color.g) & 0xff;
-		layer.data[y * (layer.width * 4) + x * 4 + 2] = (Sketchfull.options.color.b) & 0xff;
-		layer.data[y * (layer.width * 4) + x * 4 + 3] = Math.min(layer.data[y * (layer.width * 4) + x * 4 + 3], alpha & 0xff);
+		var offset = y * (layer.width * 4) + x * 4;
+		layer.data[offset]   = Sketchfull.options.color.r;
+		layer.data[++offset] = Sketchfull.options.color.g;
+		layer.data[++offset] = Sketchfull.options.color.b;
+		layer.data[++offset] = Math.min(layer.data[offset], alpha & 0xff);
 	},
 
 	MaximumPixel(layer, x, y, alpha) {
 		if(x < 0 || y < 0 || x >= layer.width || y >= layer.height) return;
 
-		// console.log(layer, x, y, alpha);
-		layer.data[y * (layer.width * 4) + x * 4 + 0] = (Sketchfull.options.color.r) & 0xff;
-		layer.data[y * (layer.width * 4) + x * 4 + 1] = (Sketchfull.options.color.g) & 0xff;
-		layer.data[y * (layer.width * 4) + x * 4 + 2] = (Sketchfull.options.color.b) & 0xff;
-		layer.data[y * (layer.width * 4) + x * 4 + 3] = Math.max(layer.data[y * (layer.width * 4) + x * 4 + 3], alpha & 0xff);
+		var offset = y * (layer.width * 4) + x * 4;
+		layer.data[offset]   = Sketchfull.options.color.r;
+		layer.data[++offset] = Sketchfull.options.color.g;
+		layer.data[++offset] = Sketchfull.options.color.b;
+		layer.data[++offset] = Math.max(layer.data[offset], alpha & 0xff);
 	},
 
 	GetPixel(bitmap, x, y) {
@@ -460,25 +492,11 @@ const Sketchfull = {
 
 	Log(message, level) {
 		console.log(message);
-		Materialize.toast(message, 4000)
+		Materialize.toast(message, 5000)
 	},
 
 	Update(timestamp) {
 		try {
-			var CompositeBitmapLayer = function(context, layer) {
-				var imagedata = context.getImageData(layer.x, layer.y, context.canvas.width, context.canvas.height);
-				var composite = imagedata.data, layerdata = layer.data.data || layer.data;
-
-				for(var j = 0; j < composite.length; j += 4) {
-					composite[j + 0] = Math.round(Math.lerp(composite[j + 0], layerdata[j + 0], layerdata[j + 3] / 255));
-					composite[j + 1] = Math.round(Math.lerp(composite[j + 1], layerdata[j + 1], layerdata[j + 3] / 255));
-					composite[j + 2] = Math.round(Math.lerp(composite[j + 2], layerdata[j + 2], layerdata[j + 3] / 255));
-					composite[j + 3] = Math.min(255, composite[j + 3] + layerdata[j + 3]);
-				}
-
-				context.putImageData(imagedata, layer.x, layer.y);
-			}
-
 			var CompositeTextLayer = function(context, layer) {
 				context.font = "20px Arial";
 				context.fillStyle = "rgb(" + layer.data.color.r + ", " + layer.data.color.g + ", " + layer.data.color.b + ")";
@@ -514,7 +532,7 @@ const Sketchfull = {
 
 						Sketchfull.layercanvas.context.clearRect(0, 0, Sketchfull.layercanvas.width, Sketchfull.layercanvas.height);
 						switch(Sketchfull.layers[i].type) {
-							case "bitmap": CompositeBitmapLayer(Sketchfull.layercanvas.context, Sketchfull.layers[i]); break;
+							case "bitmap": Sketchfull.layercanvas.context.drawImage(Sketchfull.layers[i].data, Sketchfull.layers[i].x, Sketchfull.layers[i].y); break;
 							case "text": CompositeTextLayer(Sketchfull.layercanvas.context, Sketchfull.layers[i]); break;
 							default: console.warn("Cannot draw layer");
 						}
@@ -534,7 +552,7 @@ const Sketchfull = {
 
 						Sketchfull.layercanvas.context.clearRect(0, 0, Sketchfull.layercanvas.width, Sketchfull.layercanvas.height);
 						switch(Sketchfull.layers[i].type) {
-							case "bitmap": CompositeBitmapLayer(Sketchfull.layercanvas.context, Sketchfull.layers[i]); break;
+							case "bitmap": Sketchfull.layercanvas.context.drawImage(Sketchfull.layers[i].data, Sketchfull.layers[i].x, Sketchfull.layers[i].y); break;
 							case "text": CompositeTextLayer(Sketchfull.layercanvas.context, Sketchfull.layers[i]); break;
 							default: console.warn("Cannot draw layer");
 						}
@@ -554,30 +572,30 @@ const Sketchfull = {
 				Sketchfull.canvas.context.clearRect(0, 0, Sketchfull.canvas.width, Sketchfull.canvas.height);
 
 				// Merge
-				CompositeBitmapLayer(Sketchfull.canvas.context, Sketchfull.backcanvas.context.getImageData(0, 0, Sketchfull.backcanvas.width, Sketchfull.backcanvas.height));
+				Sketchfull.canvas.context.drawImage(Sketchfull.backcanvas, 0, 0);
 
 				// Draw current layer
 				if(Sketchfull.layers[Sketchfull.layer].visible) {
 					Sketchfull.layercanvas.context.clearRect(0, 0, Sketchfull.layercanvas.width, Sketchfull.layercanvas.height);
 					switch(Sketchfull.layers[Sketchfull.layer].type) {
-						case "bitmap": CompositeBitmapLayer(Sketchfull.layercanvas.context, Sketchfull.layers[Sketchfull.layer]); break;
-						case "text": CompositeTextLayer(Sketchfull.layercanvas.context, Sketchfull.layers[Sketchfull.layer]); break;
+						case "bitmap": Sketchfull.canvas.context.drawImage(Sketchfull.layers[Sketchfull.layer].data, Sketchfull.layers[Sketchfull.layer].x, Sketchfull.layers[Sketchfull.layer].y); break;
+						case "text": CompositeTextLayer(Sketchfull.canvas.context, Sketchfull.layers[Sketchfull.layer]); break;
 						default: console.warn("Cannot draw layer");
 					}
-					Sketchfull.canvas.context.drawImage(Sketchfull.layercanvas, 0, 0);
+					//Sketchfull.canvas.context.drawImage(Sketchfull.layercanvas, 0, 0);
 
 					// Thumbnail
-					var thumbcanvas = $("#sketch-layers > div[data-index='" + Sketchfull.layer + "'] canvas")[0];
-					if(thumbcanvas) {
-						thumbcanvas.context = thumbcanvas.getContext("2d");
-						thumbcanvas.context.clearRect(0, 0, thumbcanvas.width, thumbcanvas.height);
-						thumbcanvas.context.drawImage(Sketchfull.layercanvas, 0, 0, thumbcanvas.width, thumbcanvas.height);
-					}
+					// var thumbcanvas = $("#sketch-layers > div[data-index='" + Sketchfull.layer + "'] canvas")[0];
+					// if(thumbcanvas) {
+					// 	thumbcanvas.context = thumbcanvas.getContext("2d");
+					// 	thumbcanvas.context.clearRect(0, 0, thumbcanvas.width, thumbcanvas.height);
+					// 	thumbcanvas.context.drawImage(Sketchfull.layercanvas, 0, 0, thumbcanvas.width, thumbcanvas.height);
+					// }
 				}
 
 				// Foreground
 				if(Sketchfull.layer < Sketchfull.layers.length - 1) {
-					CompositeBitmapLayer(Sketchfull.canvas.context, Sketchfull.forecanvas.context.getImageData(0, 0, Sketchfull.forecanvas.width, Sketchfull.forecanvas.height));
+					Sketchfull.forecanvas.context.drawImage(Sketchfull.layercanvas, 0, 0);
 				}
 
 				Sketchfull.dirty = false;
@@ -768,11 +786,12 @@ const Sketchfull = {
 			image.onload = function() {
 				console.dir(image);
 				var canvas = document.createElement('canvas');
-				context = canvas.getContext("2d");
 				canvas.width = image.width;
 				canvas.height = image.height;
+				canvas.context = canvas.getContext("2d");
+				canvas.context.imagedata = canvas.context.getImageData(0, 0, canvas.width, canvas.height);
 				context.drawImage(image, 0, 0);
-				Sketchfull.layers.push({type: "bitmap", visible: true, name: e.srcElement.value.split(/(\/|\\)+/).last(), x: 0, y: 0, data: context.getImageData(0, 0, image.width, image.height)});
+				Sketchfull.layers.push({type: "bitmap", visible: true, name: e.srcElement.value.split(/(\/|\\)+/).last(), x: 0, y: 0, data: canvas});
 				Sketchfull.dirty = true;
 			}
 			image.src = event.target.result;
@@ -781,6 +800,7 @@ const Sketchfull = {
 	},
 
 	Invert() {
+		// TODO fix
 		switch(Sketchfull.currentLayer.type) {
 			case "bitmap":
 				for(var i = 0; i < Sketchfull.currentLayer.data.data.length; i += 4) {
@@ -802,6 +822,7 @@ const Sketchfull = {
 	},
 
 	Grayscale() {
+		// TODO fix
 		switch(Sketchfull.currentLayer.type) {
 			case "bitmap":
 				for(var i = 0; i < Sketchfull.currentLayer.data.data.length; i += 4) {
@@ -834,10 +855,10 @@ const Sketchfull = {
 
 	NewLayer() {
 		if(Sketchfull.layers.length == 0) {
-			Sketchfull.layers[0] = {type: "bitmap", visible: true, name: "Layer 0", x: 0, y: 0, data: new ImageData(500, 500)};
+			Sketchfull.layers[0] = {type: "bitmap", visible: true, name: "Layer 0", x: 0, y: 0, data: createCanvasOfDimensions(500, 500)};
 			Sketchfull.layer = 0;
 		} else {
-			Sketchfull.layers.splice(Sketchfull.layer + 1, 0, {type: "bitmap", visible: true, name: "Layer " + Sketchfull.layers.length, x: 0, y: 0, data: new ImageData(500, 500)});
+			Sketchfull.layers.splice(Sketchfull.layer + 1, 0, {type: "bitmap", visible: true, name: "Layer " + Sketchfull.layers.length, x: 0, y: 0, data: createCanvasOfDimensions(500, 500)});
 			Sketchfull.layer += 1;
 		}
 		Sketchfull.dirty = true;
