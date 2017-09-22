@@ -58,7 +58,7 @@ const Sketchfull = {
 			Start(layer, x, y) {
 				switch(layer.type) {
 					case "bitmap":
-						$(".colpick").colpickSetColor(Sketchfull.GetPixel(layer.data, Math.round(x), Math.round(y)));
+						$(".colpick").colpickSetColor(Sketchfull.GetPixel(layer.data.context.imagedata, Math.round(x), Math.round(y)));
 						break;
 					case "text":
 					case "line":
@@ -75,29 +75,52 @@ const Sketchfull = {
 			}
 		},
 		erase: {
+
 			switch: true,
 			options: {
 				thickness: 5,
+				hardness: 1,
+				opacity: 255,
 			},
-			toolbar: '<ul><li><span>Eraser</span></li><li><span>Line Thickness</span></li><li><span class="range-field"><input type="range" id="sketch-thickness" min="1" max="250" /></span></li></ul>',
+			toolbar: '<ul><li><span>Erase</span></li><li><span>Line Thickness</span></li><li><span class="range-field"><input type="range" id="sketch-thickness" min="1" max="250" /></span></li><li><span>Opacity</span></li><li><span class="range-field"><input type="range" id="sketch-opacity" min="0" max="255" /></span></li><li><span>Hardness</span></li><li><span class="range-field"><input type="range" id="sketch-hardness" min="0" max="100" /></span></li></ul>',
 			Init() {
 				$("#sketch-thickness").val(this.options.thickness);
 				$("#sketch-thickness").on("change", e => {this.options.thickness = parseInt(e.target.value)});
+				$("#sketch-opacity").val(this.options.opacity);
+				$("#sketch-opacity").on("change", e => {this.options.opacity = parseInt(e.target.value)});
+				$("#sketch-hardness").val(100 - this.options.hardness * 100);
+				$("#sketch-hardness").on("change", e => {this.options.hardness = 1 - parseInt(e.target.value) / 100});
 			},
 			Start(layer, x, y) {
-				this.Move(layer, x, y, x, y);
+				var opacity = this.options.opacity;
+
+				var circle = function(bitmap, x, y, r, hardness) {
+					for(var i = -r; i < r; i++) {
+						for(var j = -r; j < r; j++) {
+							Sketchfull.MinimumPixel(bitmap, x + i, y + j, 255 - Math.clamp(r - Math.sqrt(i*i + j*j), 0, hardness) / hardness * opacity);
+						}
+					}
+				}
+
+				var r = Math.round(this.options.thickness/2);
+				var bitmap = layer.data.context.imagedata;
+				var hardness = (r - 1) * this.options.hardness + 1;
+
+				circle(bitmap, x, y, r, hardness);
+
+				layer.data.context.putImageData(bitmap, 0, 0);
+				Sketchfull.dirty = true;
 			},
 			Move(layer, x0, y0, x1, y1) {
 				if(layer.type != "bitmap") return;
 
-				var circle = function(bitmap, x, y, r) {
-					r = Math.round(r);
+				var opacity = this.options.opacity;
 
-					for(var i = -r-1; i < r+1; i++) {
-						var height = Math.sqrt(r * r - i * i);
-
-						for (var j = Math.floor(-height); j < Math.ceil(height); j++)
-							Sketchfull.MinimumPixel(bitmap, x + i, y + j, 255 - Math.clamp(height - Math.abs(j), 0, 1) * 255);
+				var circle = function(bitmap, x, y, r, hardness) {
+					for(var i = -r; i < r; i++) {
+						for(var j = -r; j < r; j++) {
+							Sketchfull.MinimumPixel(bitmap, x + i, y + j, 255 - Math.clamp(r - Math.sqrt(i*i + j*j), 0, hardness) / hardness * opacity);
+						}
 					}
 				}
 
@@ -113,15 +136,14 @@ const Sketchfull = {
 				var err = dx - dy;
 
 				var r = Math.round(this.options.thickness/2);
-
-				circle(layer.data, x0, y0, r);
+				var bitmap = layer.data.context.imagedata;
+				var hardness = (r - 1) * this.options.hardness + 1;
 
 				while(true) {
-
-					for (var x = -r-1; x < r+1; x++)
-						Sketchfull.MinimumPixel(layer.data, x0 + x, y0, 255 - Math.clamp(r + 0.5 - Math.abs(x), 0, 1) * 255);
-					for (var y = -r-1; y < r+1; y++)
-						Sketchfull.MinimumPixel(layer.data, x0, y0 + y, 255 - Math.clamp(r + 0.5 - Math.abs(y), 0, 1) * 255);
+					for(var x = -r-1; x < r+1; x++)
+						Sketchfull.MinimumPixel(bitmap, x0 + x, y0, 255 - Math.clamp(r - Math.abs(x), 0, hardness) / hardness * opacity);
+					for(var y = -r-1; y < r+1; y++)
+						Sketchfull.MinimumPixel(bitmap, x0, y0 + y, 255 - Math.clamp(r - Math.abs(y), 0, hardness) / hardness * opacity);
 
 					if((x0 == x1) && (y0 == y1)) break;
 					var e2 = 2 * err;
@@ -129,7 +151,8 @@ const Sketchfull = {
 					if(e2 <	dx) {err += dx; y0 += sy;}
 				}
 
-				circle(layer.data, x0, y0, r);
+				circle(bitmap, x0, y0, r, hardness);
+				layer.data.context.putImageData(bitmap, 0, 0);
 
 				Sketchfull.dirty = true;
 			}
@@ -165,7 +188,7 @@ const Sketchfull = {
 				var bitmap = layer.data.context.imagedata;
 				var hardness = (r - 1) * this.options.hardness + 1;
 
-				circle(bitmap, x, y, r);
+				circle(bitmap, x, y, r, hardness);
 
 				layer.data.context.putImageData(bitmap, 0, 0);
 				Sketchfull.dirty = true;
@@ -241,7 +264,7 @@ const Sketchfull = {
 			},
 			Start(layer, x, y) { // These are floats
 				if(layer.type != "bitmap") return;
-				var bitmap = layer.data;
+				var bitmap = layer.data.context.imagedata;
 
 				x = Math.round(x);
 				y = Math.round(y);
@@ -275,6 +298,7 @@ const Sketchfull = {
 					}
 				}
 
+				layer.data.context.putImageData(bitmap, 0, 0);
 				Sketchfull.dirty = true;
 			}
 		},
@@ -307,6 +331,8 @@ const Sketchfull = {
 			Start(layer, x, y) {
 				if(layer.type != "bitmap") return;
 
+				var bitmap = layer.data.context.imagedata;
+
 				r = Math.round(this.options.thickness/2);
 
 				for(var i = -r-1; i < r+1; i++) {
@@ -314,10 +340,11 @@ const Sketchfull = {
 
 					for(var j = Math.floor(-height); j < Math.ceil(height); j++) {
 						if(Math.random() < this.options.chance)
-							Sketchfull.MaximumPixel(layer.data, x + i, y + j, Math.clamp(height - Math.abs(j), 0, 1) * 255);
+							Sketchfull.MaximumPixel(bitmap, x + i, y + j, Math.clamp(height - Math.abs(j), 0, 1) * 255);
 					}
 				}
 
+				layer.data.context.putImageData(bitmap, 0, 0);
 				Sketchfull.dirty = true;
 			}
 		},
@@ -465,9 +492,11 @@ const Sketchfull = {
 		if(x < 0 || y < 0 || x >= layer.width || y >= layer.height) return;
 
 		var offset = y * (layer.width * 4) + x * 4;
-		layer.data[offset]   = Sketchfull.options.color.r;
-		layer.data[++offset] = Sketchfull.options.color.g;
-		layer.data[++offset] = Sketchfull.options.color.b;
+		var old = layer.data[offset+3];
+		var lerp = Math.clamp((alpha + 255 - layer.data[offset+3]) / 255, 0, 1);
+		layer.data[offset]   = Math.lerp(layer.data[offset], Sketchfull.options.color.r, lerp);
+		layer.data[++offset] = Math.lerp(layer.data[offset], Sketchfull.options.color.g, lerp);
+		layer.data[++offset] = Math.lerp(layer.data[offset], Sketchfull.options.color.b, lerp);
 		layer.data[++offset] = Math.min(layer.data[offset], alpha & 0xff);
 	},
 
@@ -475,9 +504,10 @@ const Sketchfull = {
 		if(x < 0 || y < 0 || x >= layer.width || y >= layer.height) return;
 
 		var offset = y * (layer.width * 4) + x * 4;
-		layer.data[offset]   = Sketchfull.options.color.r;
-		layer.data[++offset] = Sketchfull.options.color.g;
-		layer.data[++offset] = Sketchfull.options.color.b;
+		var lerp = Math.clamp((alpha + 255 - layer.data[offset+3]) / 255, 0, 1);
+		layer.data[offset]   = Math.lerp(layer.data[offset], Sketchfull.options.color.r, lerp);
+		layer.data[++offset] = Math.lerp(layer.data[offset], Sketchfull.options.color.g, lerp);
+		layer.data[++offset] = Math.lerp(layer.data[offset], Sketchfull.options.color.b, lerp);
 		layer.data[++offset] = Math.max(layer.data[offset], alpha & 0xff);
 	},
 
@@ -578,25 +608,23 @@ const Sketchfull = {
 				if(Sketchfull.layers[Sketchfull.layer].visible) {
 					Sketchfull.layercanvas.context.clearRect(0, 0, Sketchfull.layercanvas.width, Sketchfull.layercanvas.height);
 					switch(Sketchfull.layers[Sketchfull.layer].type) {
-						case "bitmap": Sketchfull.canvas.context.drawImage(Sketchfull.layers[Sketchfull.layer].data, Sketchfull.layers[Sketchfull.layer].x, Sketchfull.layers[Sketchfull.layer].y); break;
-						case "text": CompositeTextLayer(Sketchfull.canvas.context, Sketchfull.layers[Sketchfull.layer]); break;
+						case "bitmap": Sketchfull.layercanvas.context.drawImage(Sketchfull.layers[Sketchfull.layer].data, Sketchfull.layers[Sketchfull.layer].x, Sketchfull.layers[Sketchfull.layer].y); break;
+						case "text": CompositeTextLayer(Sketchfull.layercanvas.context, Sketchfull.layers[Sketchfull.layer]); break;
 						default: console.warn("Cannot draw layer");
 					}
-					//Sketchfull.canvas.context.drawImage(Sketchfull.layercanvas, 0, 0);
+					Sketchfull.canvas.context.drawImage(Sketchfull.layercanvas, 0, 0);
 
 					// Thumbnail
-					// var thumbcanvas = $("#sketch-layers > div[data-index='" + Sketchfull.layer + "'] canvas")[0];
-					// if(thumbcanvas) {
-					// 	thumbcanvas.context = thumbcanvas.getContext("2d");
-					// 	thumbcanvas.context.clearRect(0, 0, thumbcanvas.width, thumbcanvas.height);
-					// 	thumbcanvas.context.drawImage(Sketchfull.layercanvas, 0, 0, thumbcanvas.width, thumbcanvas.height);
-					// }
+					var thumbcanvas = $("#sketch-layers > div[data-index='" + Sketchfull.layer + "'] canvas")[0];
+					if(thumbcanvas) {
+						thumbcanvas.context = thumbcanvas.getContext("2d");
+						thumbcanvas.context.clearRect(0, 0, thumbcanvas.width, thumbcanvas.height);
+						thumbcanvas.context.drawImage(Sketchfull.layercanvas, 0, 0, thumbcanvas.width, thumbcanvas.height);
+					}
 				}
 
 				// Foreground
-				if(Sketchfull.layer < Sketchfull.layers.length - 1) {
-					Sketchfull.forecanvas.context.drawImage(Sketchfull.layercanvas, 0, 0);
-				}
+				Sketchfull.canvas.context.drawImage(Sketchfull.forecanvas, 0, 0);
 
 				Sketchfull.dirty = false;
 			}
@@ -789,9 +817,10 @@ const Sketchfull = {
 				canvas.width = image.width;
 				canvas.height = image.height;
 				canvas.context = canvas.getContext("2d");
+				canvas.context.drawImage(image, 0, 0);
 				canvas.context.imagedata = canvas.context.getImageData(0, 0, canvas.width, canvas.height);
-				context.drawImage(image, 0, 0);
 				Sketchfull.layers.push({type: "bitmap", visible: true, name: e.srcElement.value.split(/(\/|\\)+/).last(), x: 0, y: 0, data: canvas});
+				Sketchfull.layer += 1;
 				Sketchfull.dirty = true;
 			}
 			image.src = event.target.result;
@@ -803,11 +832,13 @@ const Sketchfull = {
 		// TODO fix
 		switch(Sketchfull.currentLayer.type) {
 			case "bitmap":
-				for(var i = 0; i < Sketchfull.currentLayer.data.data.length; i += 4) {
-					Sketchfull.currentLayer.data.data[i + 0] = 255 - Sketchfull.currentLayer.data.data[i + 0];
-					Sketchfull.currentLayer.data.data[i + 1] = 255 - Sketchfull.currentLayer.data.data[i + 1];
-					Sketchfull.currentLayer.data.data[i + 2] = 255 - Sketchfull.currentLayer.data.data[i + 2];
+				var bitmap = Sketchfull.currentLayer.data.context.imagedata;
+				for(var i = 0; i < bitmap.data.length; i += 4) {
+					bitmap.data[i + 0] = 255 - bitmap.data[i + 0];
+					bitmap.data[i + 1] = 255 - bitmap.data[i + 1];
+					bitmap.data[i + 2] = 255 - bitmap.data[i + 2];
 				};
+				Sketchfull.currentLayer.data.context.putImageData(bitmap, 0, 0);
 				break;
 			case "text":
 			case "line":
@@ -825,10 +856,12 @@ const Sketchfull = {
 		// TODO fix
 		switch(Sketchfull.currentLayer.type) {
 			case "bitmap":
-				for(var i = 0; i < Sketchfull.currentLayer.data.data.length; i += 4) {
-					var luma =  0.2126 * Sketchfull.currentLayer.data.data[i + 0] + 0.7152 * Sketchfull.currentLayer.data.data[i + 1] + 0.0722 * Sketchfull.currentLayer.data.data[i + 2];
-					Sketchfull.currentLayer.data.data[i + 0] = Sketchfull.currentLayer.data.data[i + 1] = Sketchfull.currentLayer.data.data[i + 2] = luma;
+				var bitmap = Sketchfull.currentLayer.data.context.imagedata;
+				for(var i = 0; i < bitmap.data.length; i += 4) {
+					var luma =  0.2126 * bitmap.data[i + 0] + 0.7152 * bitmap.data[i + 1] + 0.0722 * bitmap.data[i + 2];
+					bitmap.data[i + 0] = bitmap.data[i + 1] = bitmap.data[i + 2] = luma;
 				};
+				Sketchfull.currentLayer.data.context.putImageData(bitmap, 0, 0);
 				break;
 			case "text":
 			case "line":
