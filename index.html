@@ -50,7 +50,7 @@
 		<div class="modal-content">
 			<h4>Sketchfull</h4>
 			<ul>
-				<li>A bad image editor by <a href="https://github.com/mattconsto/">Matt Consto</a></li>
+				<li>A bad image editor by <a href="https://consto.uk">Matthew Consterdine</a></li>
 				<li>Browse the <a href="https://github.com/mattconsto/sketchfull">Source code</a></li>
 			</ul>
 		</div>
@@ -66,12 +66,8 @@
 				<input type="file" onchange="Sketchfull.Open(event)" />
 			</div>
 		</div></li>
-		<li><a href="#!" disabled>Save</a></li>
 		<li><a class='dropdown-button' data-activates='dropdown-file-export' data-hover="hover" data-beloworigin="false">Export<i class="material-icons right" style="margin: 0;">keyboard_arrow_right</i></a></li>
 		<li><a onclick="Sketchfull.Print()">Print</a></li>
-		<li class="divider"></li>
-		<li><a href="#!" disabled>Resize Image</a></li>
-		<li><a href="#!" disabled>Resize Canvas</a></li>
 	</ul>
 
 	<ul id="dropdown-file-export" class="dropdown-content">
@@ -81,58 +77,32 @@
 		<li><a onclick="Sketchfull.Download(this, 'image/bmp')">Export as BMP</a></li>
 	</ul>
 
-	<ul id="dropdown-edit" class="dropdown-content">
-		<li><a href="#!" disabled>Undo</a></li>
-		<li><a href="#!" disabled>Redo</a></li>
-		<li class="divider"></li>
-		<li><a href="#!" disabled>Cut</a></li>
-		<li><a href="#!" disabled>Copy</a></li>
-		<li><a href="#!" disabled>Paste</a></li>
-		<li class="divider"></li>
-		<li><a href="#!" disabled>Clear Selection</a></li>
-		<li><a href="#!" disabled>Select All</a></li>
-	</ul>
-
 	<ul id="dropdown-view" class="dropdown-content">
-		<li><a href="#!" disabled>Tools</a></li>
-		<li><a href="#!" disabled>Color Picker</a></li>
-		<li><a href="#!" disabled>Layers</a></li>
-		<li class="divider"></li>
 		<li><a onclick="Sketchfull.ResetZoom()">Reset Zoom</a></li>
 	</ul>
 
 	<ul id="dropdown-effects" class="dropdown-content">
 		<li><a class='dropdown-button' data-activates='dropdown-effects-flip' data-hover="hover" data-beloworigin="false">Flip/Rotate<i class="material-icons right" style="margin: 0;">keyboard_arrow_right</i></a></li>
-		<li><a href="#!" disabled>Stretch/Skew</a></li>
 		<li><a onclick="Sketchfull.Invert()">Invert Colors</a></li>
 		<li><a onclick="Sketchfull.Grayscale()">Grayscale</a></li>
 		<li><a onclick="Sketchfull.BackgroundColor(prompt('Set Background Color'))">Set Background Color</a></li>
 		<li><a onclick="Sketchfull.Clear()">Clear Canvas</a></li>
 	</ul>
 
-	<ul id="dropdown-effects-flip" class="dropdown-content">
-		<li><a href="#!" disabled>Flip Horizontal</a></li>
-		<li><a href="#!" disabled>Flip Vertical</a></li>
-	</ul>
-
 	<ul id="dropdown-help" class="dropdown-content">
-		<li><a href="https://github.com/mattconsto/sketchfull/wiki">User Guide</a></li>
 		<li><a class="modal-trigger" href="#modal-about">About</a></li>
 	</ul>
 
 	<nav>
 		<div class="nav-wrapper" style="display: flex; justify-content: space-between;">
-			<a href="#!" class="brand-logo"><i class="material-icons">palette</i><span class="hide-on-small-only">Sketchfull</span></a>
+			<a href="#!" class="brand-logo"><span class="hide-on-small-only">Sketchfull</span></a>
 			<ul>
 				<li><a class="dropdown-button" href="#!" data-activates="dropdown-file">File<i class="material-icons right">arrow_drop_down</i></a></li>
-				<li><a class="dropdown-button" href="#!" data-activates="dropdown-edit">Edit<i class="material-icons right">arrow_drop_down</i></a></li>
 				<li><a class="dropdown-button" href="#!" data-activates="dropdown-view">View<i class="material-icons right">arrow_drop_down</i></a></li>
 				<li><a class="dropdown-button" href="#!" data-activates="dropdown-effects">Effects<i class="material-icons right">arrow_drop_down</i></a></li>
 				<li><a class="dropdown-button" href="#!" data-activates="dropdown-help">Help<i class="material-icons right">arrow_drop_down</i></a></li>
 			</ul>
-			<ul>
-				<li><a class="dropdown-button" href="https://consto.uk" ><span class="hide-on-med-and-down">By Matt Consto</span></a></li>
-			</ul>
+			<a href="#!" class="brand-logo"><i class="material-icons">palette</i></a>
 		</div>
 	</nav>
 
@@ -147,25 +117,13 @@
 	<div id="sketch-tool-panel" class="card sketch-panel resizable draggable hide">
 		<div class="card-content sketch-panel-title draggable-handle"></div>
 		<div id="sketch-tools" class="card-content">
-			<a data-tool="undo" class="waves-effect" disabled><i class="material-icons" title="Undo">undo</i></a>
-			<a data-tool="redo" class="waves-effect" disabled><i class="material-icons" title="Redo">redo</i></a>
-			<a class="waves-effect"><i class="material-icons">&nbsp;</i></a>
 			<a data-tool="move" class="waves-effect"><i class="material-icons" title="Move">open_with</i></a>
-			<a data-tool="select" class="waves-effect" disabled><i class="material-icons" title="Select">select_all</i></a>
-			<a class="waves-effect"><i class="material-icons">&nbsp;</i></a>
 			<a data-tool="pick" class="waves-effect"><i class="material-icons" title="Picker">colorize</i></a>
 			<a data-tool="erase" class="waves-effect"><i class="material-icons" title="Erase">crop_7_5</i></a>
 			<a data-tool="pencil" class="waves-effect"><i class="material-icons" title="Pencil">create</i></a>
-			<a data-tool="brush" class="waves-effect" disabled><i class="material-icons" title="Brush">brush</i></a>
 			<a data-tool="fill" class="waves-effect"><i class="material-icons" title="Fill">format_color_fill</i></a>
-			<a data-tool="gradient" class="waves-effect" disabled><i class="material-icons" title="Gradient">gradient</i></a>
 			<a data-tool="spray" class="waves-effect"><i class="material-icons" title="Spray">highlight</i></a>
-			<a class="waves-effect"><i class="material-icons">&nbsp;</i></a>
 			<a data-tool="text" class="waves-effect"><i class="material-icons" title="Text">text_fields</i></a>
-			<a data-tool="line" class="waves-effect" disabled><i class="material-icons" title="Line">remove</i></a>
-			<a data-tool="rectangle" class="waves-effect" disabled><i class="material-icons" title="Rectangle">add_box</i></a>
-			<a data-tool="circle" class="waves-effect" disabled><i class="material-icons" title="Circle">add_circle</i></a>
-			<a class="waves-effect"><i class="material-icons">&nbsp;</i></a>
 			<a data-tool="zoomin" class="waves-effect"><i class="material-icons" title="Zoom-in">zoom_in</i></a>
 			<a data-tool="zoomout" class="waves-effect"><i class="material-icons" title="Zoom-out">zoom_out</i></a>
 		</div>
@@ -173,7 +131,7 @@
 
 	<div id="sketch-color-panel" class="card sketch-panel draggable hide">
 		<div class="card-content sketch-panel-title draggable-handle"></div>
-		<div class="card-content colpick">
+		<div class="card-content colpick" style="margin-top: 25px">
 		</div>
 	</div>
 
