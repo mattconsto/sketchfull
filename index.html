@@ -144,6 +144,12 @@
 		<canvas id="sketch-canvas" class="hide" draggable="false">Your browser doesn't support HTML5 Canvas. Visit <a href="http://outdatedbrowser.com">outdatedbrowser.com</a> to help update your browser.</canvas>
 	</div>
 
+	<script>
+		if (/MSIE (\d+\.\d+);/.test(navigator.userAgent) || navigator.userAgent.indexOf("Trident/") > -1) {
+			document.getElementsByTagName("body")[0].style.display = "none";
+			alert("Please upgrade to a modern browser to use Sketchfull");
+		}
+	</script>
 	<script src="scripts/ractive.min.js"></script>
 	<script src="scripts/jquery-3.2.1.min.js"></script>
 	<script src="scripts/jquery-ui.min.js"></script>
